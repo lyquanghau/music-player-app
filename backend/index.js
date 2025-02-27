@@ -1,10 +1,10 @@
 const express = require('express');
 const axios = require('axios');
-const querystring = require('querystring'); // Thêm để xử lý dữ liệu form-urlencoded
-require('dotenv').config(); // Load biến từ file .env
+const querystring = require('querystring');
+require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000; // Giá trị mặc định là 3000 nếu PORT không được định nghĩa
+const port = process.env.PORT || 3000;
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
@@ -31,13 +31,13 @@ app.get('/callback', async (req, res) => {
         const response = await axios({
             method: 'post',
             url: 'https://accounts.spotify.com/api/token',
-            data: querystring.stringify({ // Chuyển dữ liệu sang định dạng form-urlencoded
+            data: querystring.stringify({
                 grant_type: 'authorization_code',
                 code: code,
-                redirect_uri: SPOTIFY_REDIRECT_URI, // Sửa thành SPOTIFY_REDIRECT_URI
+                redirect_uri: SPOTIFY_REDIRECT_URI,
             }),
             headers: {
-                'Authorization': 'Basic ' + Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'), // Sửa thành SPOTIFY_*
+                'Authorization': 'Basic ' + Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'),
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
         });
@@ -47,7 +47,6 @@ app.get('/callback', async (req, res) => {
         } = response.data;
         res.send(`Access Token: ${access_token}<br>Refresh Token: ${refresh_token}`);
     } catch (error) {
-        // Xử lý lỗi an toàn
         if (error.response) {
             console.log('Lỗi từ Spotify:', error.response.data);
             res.send('Lỗi khi lấy token: ' + JSON.stringify(error.response.data));
@@ -60,8 +59,15 @@ app.get('/callback', async (req, res) => {
         }
     }
 });
+
 app.get('/me', async (req, res) => {
-    const accessToken = 'BQCP3eyMnC_LrnEoHG-0NZoKUYkcNHKBDbVY6N7m2z85iHYaaac30yZUPxhTPalnIfdTHIU78zlaRgi6BMqtHDAp6uxT5YB4VHEViN1SZzZcF16JiaWFAEnjvU3V-cBqNxnxxji1tYmBUfDgpZjnafad03W5AESLpNx5V00UsRBl9LFEs6DjRO-tUYim2AuvcL0hBa9ms3Y0DaBiTsf1x0NS9q6RwbiS_WbJkBhIyyjpKMvSg3wWGQ'; // Dán Access Token của bạn vào đây
+    const accessToken = req.query.token;
+    if (!accessToken) {
+        return res.status(400).json({
+            error: 'Lỗi: Không có Access Token'
+        });
+    }
+
     try {
         const response = await axios({
             method: 'get',
@@ -72,9 +78,18 @@ app.get('/me', async (req, res) => {
         });
         res.json(response.data);
     } catch (error) {
-        res.send('Lỗi: ' + (error.response ? JSON.stringify(error.response.data) : error.message));
+        if (error.response) {
+            console.log('Lỗi từ Spotify:', error.response.data);
+            res.status(error.response.status).json(error.response.data);
+        } else {
+            console.log('Lỗi khác:', error.message);
+            res.status(500).json({
+                error: error.message
+            });
+        }
     }
 });
+
 app.listen(port, () => {
     console.log(`Server chạy trên http://localhost:${port}`);
 });
