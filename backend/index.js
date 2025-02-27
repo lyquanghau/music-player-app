@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    const scope = 'user-read-private user-read-email';
+    const scope = 'user-read-private user-read-email streaming playlist-read-private';
     const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${SPOTIFY_CLIENT_ID}&scope=${encodeURIComponent(scope)}&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}`;
     res.redirect(authUrl);
 });
