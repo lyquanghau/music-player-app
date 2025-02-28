@@ -2,27 +2,41 @@ const express = require('express');
 const axios = require('axios');
 const querystring = require('querystring');
 const connectDB = require('./db');
-const Token = require('./models/Token'); // Sửa chính tả
+const Token = require('./models/Token'); // Model Token để lưu trữ accessToken và refreshToken
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
+
+// Các biến môi trường từ .env file
 const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 
+app.use(cors({
+  origin: 'http://localhost:6704', // Chỉ cho phép frontend của bạn
+  credentials: true, // Cho phép gửi cookies và thông tin đăng nhập
+  methods: ['GET', 'POST', 'OPTIONS'], // Cho phép các phương thức này
+}));
+
+
+// Kết nối cơ sở dữ liệu MongoDB
 connectDB();
 
+// Trang chủ
 app.get('/', (req, res) => {
     res.send('ly quang hau');
 });
 
+// Route login, điều hướng người dùng tới Spotify Authorization page
 app.get('/login', (req, res) => {
     const scope = 'user-read-private user-read-email streaming playlist-read-private';
     const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${SPOTIFY_CLIENT_ID}&scope=${encodeURIComponent(scope)}&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}`;
     res.redirect(authUrl);
 });
 
+// Callback route nhận mã code từ Spotify, dùng để lấy access token
 app.get('/callback', async (req, res) => {
     const code = req.query.code || null;
     if (!code) {
@@ -32,6 +46,7 @@ app.get('/callback', async (req, res) => {
     }
 
     try {
+        // Gửi request lấy token từ Spotify
         const response = await axios({
             method: 'post',
             url: 'https://accounts.spotify.com/api/token',
@@ -45,12 +60,14 @@ app.get('/callback', async (req, res) => {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
         });
+
         const {
             access_token,
             refresh_token,
             expires_in
         } = response.data;
 
+        // Lưu token vào MongoDB
         const tokenDoc = new Token({
             accessToken: access_token,
             refreshToken: refresh_token,
@@ -65,31 +82,25 @@ app.get('/callback', async (req, res) => {
             expires_in
         });
     } catch (error) {
-        if (error.response) {
-            console.log('Lỗi từ Spotify:', error.response.data);
-            res.send('Lỗi khi lấy token: ' + JSON.stringify(error.response.data));
-        } else if (error.request) {
-            console.log('Không nhận được phản hồi:', error.request);
-            res.send('Lỗi mạng: Không kết nối được tới Spotify');
-        } else {
-            console.log('Lỗi khác:', error.message);
-            res.send('Lỗi: ' + error.message);
-        }
+        // Xử lý lỗi từ Spotify API
+        handleError(error, res);
     }
 });
 
+// Route refresh token khi access token hết hạn
 app.get('/refresh', async (req, res) => {
     try {
+        // Lấy refresh token từ cơ sở dữ liệu
         const tokenDoc = await Token.findOne().sort({
             createdAt: -1
         });
-        console.log('Token tìm thấy:', tokenDoc);
         if (!tokenDoc || !tokenDoc.refreshToken) {
             return res.status(404).json({
                 error: 'Không tìm thấy refresh token trong MongoDB'
             });
         }
 
+        // Gửi request để refresh access token
         const response = await axios({
             method: 'post',
             url: 'https://accounts.spotify.com/api/token',
@@ -108,6 +119,7 @@ app.get('/refresh', async (req, res) => {
             expires_in
         } = response.data;
 
+        // Cập nhật token trong MongoDB
         tokenDoc.accessToken = access_token;
         tokenDoc.expiresIn = expires_in;
         tokenDoc.createdAt = new Date();
@@ -119,18 +131,12 @@ app.get('/refresh', async (req, res) => {
             expires_in
         });
     } catch (e) {
-        if (e.response) {
-            console.log('Lỗi từ Spotify:', e.response.data);
-            res.status(e.response.status).json(e.response.data);
-        } else {
-            console.log('Lỗi khác:', e.message);
-            res.status(500).json({
-                error: e.message
-            });
-        }
+        // Xử lý lỗi từ Spotify API
+        handleError(e, res);
     }
 });
 
+// Route để lấy thông tin người dùng từ Spotify API
 app.get('/me', async (req, res) => {
     const accessToken = req.query.token;
     if (!accessToken) {
@@ -149,18 +155,26 @@ app.get('/me', async (req, res) => {
         });
         res.json(response.data);
     } catch (error) {
-        if (error.response) {
-            console.log('Lỗi từ Spotify:', error.response.data);
-            res.status(error.response.status).json(error.response.data);
-        } else {
-            console.log('Lỗi khác:', error.message);
-            res.status(500).json({
-                error: error.message
-            });
-        }
+        // Xử lý lỗi từ Spotify API
+        handleError(error, res);
     }
 });
 
+// Hàm xử lý lỗi chung cho các API
+function handleError(error, res) {
+    if (error.response) {
+        console.log('Lỗi từ Spotify:', error.response.data);
+        res.status(error.response.status).json(error.response.data);
+    } else if (error.request) {
+        console.log('Không nhận được phản hồi:', error.request);
+        res.status(500).send('Lỗi mạng: Không kết nối được tới Spotify');
+    } else {
+        console.log('Lỗi khác:', error.message);
+        res.status(500).send('Lỗi: ' + error.message);
+    }
+}
+
+// Khởi chạy server
 app.listen(port, () => {
     console.log(`Server chạy trên http://localhost:${port}`);
 });
