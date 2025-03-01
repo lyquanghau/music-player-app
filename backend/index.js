@@ -43,9 +43,7 @@ app.get('/login', (req, res) => {
 app.get('/callback', async (req, res) => {
     const code = req.query.code || null;
     if (!code) {
-        return res.status(400).json({
-            error: 'Lỗi: Không tìm thấy mã code.'
-        });
+        return res.status(400).json({ error: 'Lỗi: Không tìm thấy mã code.' });
     }
 
     try {
@@ -55,26 +53,31 @@ app.get('/callback', async (req, res) => {
             data: querystring.stringify({
                 grant_type: 'authorization_code',
                 code: code,
-                redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+                redirect_uri: SPOTIFY_REDIRECT_URI,
             }),
             headers: {
-                'Authorization': 'Basic ' + Buffer.from(process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET).toString('base64'),
+                'Authorization': 'Basic ' + Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'),
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
         });
 
         const { access_token, refresh_token, expires_in } = response.data;
 
-        // Lưu token vào MongoDB
-        const tokenDoc = new Token({
-            accessToken: access_token,
-            refreshToken: refresh_token,
-            expiresIn: expires_in,
-        });
-        await tokenDoc.save();
-        console.log('Đã lưu token:', tokenDoc);
+        // Kiểm tra token đã tồn tại chưa, nếu có thì cập nhật, nếu không thì tạo mới
+        let tokenDoc = await Token.findOne().sort({ createdAt: -1 });
+        if (tokenDoc) {
+            tokenDoc.accessToken = access_token;
+            tokenDoc.refreshToken = refresh_token;
+            tokenDoc.expiresIn = expires_in;
+            tokenDoc.createdAt = new Date();
+            await tokenDoc.save();
+        } else {
+            tokenDoc = new Token({ accessToken: access_token, refreshToken: refresh_token, expiresIn: expires_in });
+            await tokenDoc.save();
+        }
+        console.log('Đã lưu/cập nhật token:', tokenDoc);
 
-        // Redirect về frontend với token trong query string
+        // Redirect về frontend với token
         res.redirect(`http://localhost:6704/callback?access_token=${access_token}&refresh_token=${refresh_token}&expires_in=${expires_in}`);
     } catch (error) {
         handleError(error, res);
