@@ -2,38 +2,41 @@ const express = require('express');
 const axios = require('axios');
 const querystring = require('querystring');
 const connectDB = require('./db');
-const Token = require('./models/Token'); // Model Token để lưu trữ accessToken và refreshToken
+const Token = require('./models/Token');
 const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 8404;
 
-// Các biến môi trường từ .env file
-const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
-const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI;
 
+
+// Cấu hình CORS
 app.use(cors({
-  origin: 'http://localhost:6704', // Chỉ cho phép frontend của bạn
-  credentials: true, // Cho phép gửi cookies và thông tin đăng nhập
-  methods: ['GET', 'POST', 'OPTIONS'], // Cho phép các phương thức này
+    origin: 'http://localhost:6704',
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+// Middleware để xử lý preflight OPTIONS request
+app.options('*', cors());
 
-// Kết nối cơ sở dữ liệu MongoDB
+// Kết nối MongoDB
 connectDB();
 
-// Trang chủ
-app.get('/', (req, res) => {
-    res.send('ly quang hau');
-});
 
-// Route login, điều hướng người dùng tới Spotify Authorization page
+app.get('/', (req, res) => {
+    res.send("Welcome");
+});
+// Route /login
 app.get('/login', (req, res) => {
     const scope = 'user-read-private user-read-email streaming playlist-read-private';
     const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${SPOTIFY_CLIENT_ID}&scope=${encodeURIComponent(scope)}&redirect_uri=${encodeURIComponent(SPOTIFY_REDIRECT_URI)}`;
-    res.redirect(authUrl);
+    res.json({ url: authUrl }); // Trả về JSON thay vì redirect
 });
 
 // Callback route nhận mã code từ Spotify, dùng để lấy access token
@@ -46,26 +49,21 @@ app.get('/callback', async (req, res) => {
     }
 
     try {
-        // Gửi request lấy token từ Spotify
         const response = await axios({
             method: 'post',
             url: 'https://accounts.spotify.com/api/token',
             data: querystring.stringify({
                 grant_type: 'authorization_code',
                 code: code,
-                redirect_uri: SPOTIFY_REDIRECT_URI,
+                redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
             }),
             headers: {
-                'Authorization': 'Basic ' + Buffer.from(SPOTIFY_CLIENT_ID + ':' + SPOTIFY_CLIENT_SECRET).toString('base64'),
+                'Authorization': 'Basic ' + Buffer.from(process.env.SPOTIFY_CLIENT_ID + ':' + process.env.SPOTIFY_CLIENT_SECRET).toString('base64'),
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
         });
 
-        const {
-            access_token,
-            refresh_token,
-            expires_in
-        } = response.data;
+        const { access_token, refresh_token, expires_in } = response.data;
 
         // Lưu token vào MongoDB
         const tokenDoc = new Token({
@@ -76,13 +74,9 @@ app.get('/callback', async (req, res) => {
         await tokenDoc.save();
         console.log('Đã lưu token:', tokenDoc);
 
-        res.json({
-            access_token,
-            refresh_token,
-            expires_in
-        });
+        // Redirect về frontend với token trong query string
+        res.redirect(`http://localhost:6704/callback?access_token=${access_token}&refresh_token=${refresh_token}&expires_in=${expires_in}`);
     } catch (error) {
-        // Xử lý lỗi từ Spotify API
         handleError(error, res);
     }
 });

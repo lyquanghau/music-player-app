@@ -9,17 +9,12 @@ const Login = () => {
     try {
       const response = await axios.get('http://localhost:8404/login', {
         withCredentials: true,
-        maxRedirects: 0, // Không tự động redirect để kiểm tra
-        validateStatus: status => status >= 200 && status < 400, // Cho phép 302 và 303
       });
-      if (response.status === 302 || response.status === 303) {
-        const redirectUrl = response.headers.location;
-        console.log('Redirecting to:', redirectUrl);
-        window.location.href = redirectUrl; // Thực hiện redirect thủ công
-      }
-
+      const { url } = response.data;
+      console.log('Redirecting to:', url);
+      window.location.href = url; // Chuyển hướng tới Spotify
     } catch (err) {
-      console.log('Error details:', err); // Debug chi tiết
+      console.log('Error details:', err);
       setError('Lỗi khi gửi request: ' + (err.response ? err.response.data.error : err.message || 'Network Error'));
     }
   };
