@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const querystring = require('querystring');
-const connectDB = require('./db');
+const connectDB = require('./db.js');
 const Token = require('./models/Token');
 const cors = require('cors');
 require('dotenv').config();
@@ -134,6 +134,10 @@ app.get('/refresh', async (req, res) => {
         handleError(e, res);
     }
 });
+
+// Sử dụng router cho các endpoint API (prefix /api)
+const apiRoutes = require('./routes/api');
+app.use('/api', apiRoutes);
 
 // Hàm xử lý lỗi
 function handleError(error, res) {
