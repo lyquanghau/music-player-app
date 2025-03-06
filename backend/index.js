@@ -7,7 +7,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 8404;
+const port = process.env.PORT;
 
 // Cấu hình CORS
 app.use(cors({
@@ -138,6 +138,7 @@ app.get('/refresh', async (req, res) => {
 // Sử dụng router cho các endpoint API (prefix /api)
 const apiRoutes = require('./routes/api');
 app.use('/api', apiRoutes);
+
 
 // Hàm xử lý lỗi
 function handleError(error, res) {
