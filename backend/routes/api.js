@@ -1,73 +1,12 @@
 const express = require('express');
 const axios = require('axios');
 const Token = require('../models/Token');
+const SearchHistory = require('../models/SearchHistory');
 const mongoose = require('mongoose');
 
 const router = express.Router();
 
-router.get('/search', async (req, res) => {
-    try {
-        const tokenDoc = await Token.findOne().sort({ createdAt: -1 });
-        if (!tokenDoc) {
-            return res.status(401).json({ error: 'Không tìm thấy token. Vui lòng đăng nhập lại.' });
-        }
-
-        const currentTime = new Date();
-        const tokenAge = (currentTime - new Date(tokenDoc.createdAt)) / 1000;
-        if (tokenAge > tokenDoc.expiresIn) {
-            return res.status(401).json({ error: 'Token đã hết hạn. Vui lòng làm mới token qua /refresh.' });
-        }
-        const token = tokenDoc.accessToken;
-
-        const query = req.query.q;
-        const type = req.query.type || 'track';
-        const limit = parseInt(req.query.limit) || 20;
-
-        if (!query) {
-            return res.status(400).json({ error: 'Thiếu tham số query (q). Vui lòng cung cấp chuỗi tìm kiếm.' });
-        }
-
-        if (limit > 50) {
-            return res.status(400).json({ error: 'Giới hạn tối đa là 50 kết quả.' });
-        }
-
-        const response = await axios.get('https://api.spotify.com/v1/search', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-            params: {
-                q: query,
-                type: type,
-                limit: limit,
-            },
-        });
-
-        res.json(response.data);
-    } catch (error) {
-        if (error.response) {
-            // Xử lý lỗi từ Spotify API
-            const status = error.response.status;
-            const errorData = error.response.data;
-            console.error('Lỗi từ Spotify Search API:', errorData);
-
-            if (status === 429) {
-                return res.status(429).json({
-                    error: 'Tốc độ yêu cầu vượt quá giới hạn. Vui lòng thử lại sau.',
-                    retryAfter: error.response.headers['retry-after'] || 5, // Thêm thời gian chờ (giây)
-                });
-            }
-            return res.status(status).json(errorData);
-        } else if (error.request) {
-            console.error('Không nhận được phản hồi từ Spotify:', error.request);
-            return res.status(500).json({ error: 'Lỗi mạng: Không kết nối được tới Spotify API.' });
-        } else {
-            console.error('Lỗi khác:', error.message);
-            return res.status(500).json({ error: 'Lỗi server: ' + error.message });
-        }
-    }
-});
-
-// Trong middleware checkToken
+// Middleware kiểm tra token
 const checkToken = async (req, res, next) => {
     try {
         console.log('Checking token...');
@@ -113,6 +52,7 @@ const checkToken = async (req, res, next) => {
         }
 
         req.accessToken = accessToken;
+        req.userId = tokenData.userId; // Giả sử bạn lưu userId trong Token
         console.log('Proceeding with access token:', accessToken);
         next();
     } catch (error) {
@@ -121,7 +61,75 @@ const checkToken = async (req, res, next) => {
     }
 };
 
-// Trong route /playlists
+// Endpoint /search với tích hợp lưu lịch sử tìm kiếm
+router.get('/search', checkToken, async (req, res) => {
+    try {
+        const token = req.accessToken;
+        const query = req.query.q;
+        const type = req.query.type || 'track';
+        const limit = parseInt(req.query.limit) || 20;
+
+        if (!query) {
+            return res.status(400).json({ error: 'Thiếu tham số query (q). Vui lòng cung cấp chuỗi tìm kiếm.' });
+        }
+
+        if (limit > 50) {
+            return res.status(400).json({ error: 'Giới hạn tối đa là 50 kết quả.' });
+        }
+
+        const response = await axios.get('https://api.spotify.com/v1/search', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            params: {
+                q: query,
+                type: type,
+                limit: limit,
+            },
+        });
+
+        // Lưu lịch sử tìm kiếm vào MongoDB
+        const searchHistory = new SearchHistory({
+            query: query,
+            type: type,
+            timestamp: new Date(),
+            userId: req.userId,
+            // userId: có thể thêm sau khi tích hợp endpoint /me để lấy Spotify user ID
+        });
+        try {
+            await searchHistory.save();
+            console.log(`Đã lưu lịch sử tìm kiếm: ${query} (type: ${type})`);
+        } catch (saveError) {
+            console.error('Lỗi khi lưu lịch sử tìm kiếm:', saveError);
+            // Vẫn trả dữ liệu từ Spotify để không ảnh hưởng trải nghiệm người dùng
+        }
+
+        res.json(response.data);
+    } catch (error) {
+        if (error.response) {
+            // Xử lý lỗi từ Spotify API
+            const status = error.response.status;
+            const errorData = error.response.data;
+            console.error('Lỗi từ Spotify Search API:', errorData);
+
+            if (status === 429) {
+                return res.status(429).json({
+                    error: 'Tốc độ yêu cầu vượt quá giới hạn. Vui lòng thử lại sau.',
+                    retryAfter: error.response.headers['retry-after'] || 5,
+                });
+            }
+            return res.status(status).json(errorData);
+        } else if (error.request) {
+            console.error('Không nhận được phản hồi từ Spotify:', error.request);
+            return res.status(500).json({ error: 'Lỗi mạng: Không kết nối được tới Spotify API.' });
+        } else {
+            console.error('Lỗi khác:', error.message);
+            return res.status(500).json({ error: 'Lỗi server: ' + error.message });
+        }
+    }
+});
+
+// Endpoint /playlists
 router.get('/playlists', checkToken, async (req, res) => {
     try {
         console.log('Fetching playlists with token:', req.accessToken);
