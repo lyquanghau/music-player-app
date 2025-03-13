@@ -14,11 +14,9 @@ router.get("/search", checkToken, async (req, res) => {
     const { q: query, type = "track", limit = 20 } = req.query; // Dùng destructuring để ngắn gọn
 
     if (!query) {
-      return res
-        .status(400)
-        .json({
-          error: "Thiếu tham số query (q). Vui lòng cung cấp chuỗi tìm kiếm.",
-        });
+      return res.status(400).json({
+        error: "Thiếu tham số query (q). Vui lòng cung cấp chuỗi tìm kiếm.",
+      });
     }
 
     const safeLimit = Math.min(parseInt(limit), 50); // Giới hạn tối đa 50
@@ -60,7 +58,6 @@ router.get("/search", checkToken, async (req, res) => {
 });
 
 // Endpoint /playlists
-// routes/api.js
 router.get("/playlists", checkToken, async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query; // Mặc định limit 20, offset 0
@@ -106,6 +103,52 @@ router.get("/history", checkToken, async (req, res) => {
   } catch (err) {
     console.log("Error: " + err);
     res.status(500).json({ error: "Failed to fetch history" });
+  }
+});
+
+// /me
+router.get("/me", checkToken, async (req, res) => {
+  try {
+    const token = req.accessToken;
+    const response = await axios.get("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const userData = response.data;
+    console.log("User data:", userData);
+
+    const tokenData = await Token.findOne().sort({ createdAt: -1 });
+    if (tokenData) {
+      tokenData.userId = userData.id;
+      await tokenData.save();
+      console.log("Token data updated:", tokenData);
+    } else {
+      console.log("Token data not found");
+    }
+
+    // trả về tt người dùng
+
+    res.status(200).json({
+      id: userData.id,
+      display_name: userData.display_name,
+      email: userData.email,
+      country: userData.country,
+      profileImage: userData.image?.[0].url || null,
+    });
+  } catch (err) {
+    console.error(
+      "Error fetching user data:",
+      err.response ? err.response.data : err.message
+    );
+    if (err.response) {
+      const { status, data } = err.response;
+      if (status === 429)
+        return res.status(429).json({ error: "Rate limit exceeded" });
+      if (status === 401)
+        return res.status(401).json({ error: "Invalid or expired token" });
+      return res.status(status).json(data);
+    }
+    res.status(500).json({ error: "Failed to fetch user data" });
   }
 });
 
