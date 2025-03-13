@@ -62,6 +62,7 @@ const checkToken = async (req, res, next) => {
 };
 
 // Endpoint /search với tích hợp lưu lịch sử tìm kiếm
+
 router.get('/search', checkToken, async (req, res) => {
     try {
         const token = req.accessToken;
