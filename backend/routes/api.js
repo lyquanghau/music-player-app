@@ -157,4 +157,18 @@ router.get('/playlists', checkToken, async (req, res) => {
     }
 });
 
+
+router.get('/history', checkToken, async (req, res) => {
+    try {
+        // lấy all lịch sử tìm kiếm
+        const history = await SearchHistory.find().sort({ timestamp: -1 }).limit(50);
+
+        console.log('History: ' + history);
+        res.status(200).json(history);
+    } catch (err) {
+        console.log("Error: " + err);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
 module.exports = router;
