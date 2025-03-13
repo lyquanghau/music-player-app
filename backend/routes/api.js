@@ -8,91 +8,70 @@ const mongoose = require("mongoose");
 const router = express.Router();
 
 // Endpoint /search với tích hợp lưu lịch sử tìm kiếm
-
 router.get("/search", checkToken, async (req, res) => {
   try {
     const token = req.accessToken;
-    const query = req.query.q;
-    const type = req.query.type || "track";
-    const limit = parseInt(req.query.limit) || 20;
+    const { q: query, type = "track", limit = 20 } = req.query; // Dùng destructuring để ngắn gọn
 
     if (!query) {
-      return res.status(400).json({
-        error: "Thiếu tham số query (q). Vui lòng cung cấp chuỗi tìm kiếm.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Thiếu tham số query (q). Vui lòng cung cấp chuỗi tìm kiếm.",
+        });
     }
 
-    if (limit > 50) {
-      return res.status(400).json({ error: "Giới hạn tối đa là 50 kết quả." });
-    }
+    const safeLimit = Math.min(parseInt(limit), 50); // Giới hạn tối đa 50
 
     const response = await axios.get("https://api.spotify.com/v1/search", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        q: query,
-        type: type,
-        limit: limit,
-      },
+      headers: { Authorization: `Bearer ${token}` },
+      params: { q: query, type, limit: safeLimit },
     });
 
-    // Lưu lịch sử tìm kiếm vào MongoDB
+    // Lưu lịch sử tìm kiếm
     const searchHistory = new SearchHistory({
-      query: query,
-      type: type,
+      query,
+      type,
       timestamp: new Date(),
       userId: req.userId,
-      // userId: có thể thêm sau khi tích hợp endpoint /me để lấy Spotify user ID
     });
-    try {
-      await searchHistory.save();
-      console.log(`Đã lưu lịch sử tìm kiếm: ${query} (type: ${type})`);
-    } catch (saveError) {
-      console.error("Lỗi khi lưu lịch sử tìm kiếm:", saveError);
-      // Vẫn trả dữ liệu từ Spotify để không ảnh hưởng trải nghiệm người dùng
-    }
+
+    await searchHistory.save().catch((err) => {
+      console.error("Lỗi khi lưu lịch sử tìm kiếm:", err.message); // Không chặn response nếu lỗi lưu
+    });
+    console.log(`Đã lưu lịch sử tìm kiếm: ${query} (type: ${type})`);
 
     res.json(response.data);
   } catch (error) {
     if (error.response) {
-      // Xử lý lỗi từ Spotify API
-      const status = error.response.status;
-      const errorData = error.response.data;
-      console.error("Lỗi từ Spotify Search API:", errorData);
-
+      const { status, data } = error.response;
+      console.error("Lỗi từ Spotify Search API:", data);
       if (status === 429) {
         return res.status(429).json({
           error: "Tốc độ yêu cầu vượt quá giới hạn. Vui lòng thử lại sau.",
           retryAfter: error.response.headers["retry-after"] || 5,
         });
       }
-      return res.status(status).json(errorData);
-    } else if (error.request) {
-      console.error("Không nhận được phản hồi từ Spotify:", error.request);
-      return res
-        .status(500)
-        .json({ error: "Lỗi mạng: Không kết nối được tới Spotify API." });
-    } else {
-      console.error("Lỗi khác:", error.message);
-      return res.status(500).json({ error: "Lỗi server: " + error.message });
+      return res.status(status).json(data);
     }
+    console.error("Lỗi khác:", error.message);
+    res.status(500).json({ error: "Lỗi server: " + error.message });
   }
 });
 
 // Endpoint /playlists
+// routes/api.js
 router.get("/playlists", checkToken, async (req, res) => {
   try {
-    console.log("Fetching playlists with token:", req.accessToken);
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
-    console.log("Request params:", { limit, offset });
+    const { limit = 20, offset = 0 } = req.query; // Mặc định limit 20, offset 0
+    const safeLimit = Math.min(parseInt(limit), 50); // Giới hạn tối đa 50
 
+    console.log("Fetching playlists with token:", req.accessToken);
     const response = await axios.get(
       "https://api.spotify.com/v1/me/playlists",
       {
         headers: { Authorization: `Bearer ${req.accessToken}` },
-        params: { limit, offset },
+        params: { limit: safeLimit, offset: parseInt(offset) },
       }
     );
 
