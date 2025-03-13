@@ -152,4 +152,66 @@ router.get("/me", checkToken, async (req, res) => {
   }
 });
 
+// routes/api.js
+router.get("/playlists/:id/tracks", checkToken, async (req, res) => {
+  try {
+    const { id } = req.params; // Lấy playlist ID từ URL
+    const { limit = 20, offset = 0 } = req.query; // Mặc định limit 20, offset 0
+    const token = req.accessToken;
+
+    if (!id) {
+      return res.status(400).json({ error: "Thiếu tham số playlist ID." });
+    }
+
+    const safeLimit = Math.min(parseInt(limit), 100); // Giới hạn tối đa 100 (theo Spotify API)
+
+    // Gọi Spotify API để lấy danh sách bài hát trong playlist
+    const response = await axios.get(
+      `https://api.spotify.com/v1/playlists/${id}/tracks`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          limit: safeLimit,
+          offset: parseInt(offset),
+          fields:
+            "items(track(id,name,artists,album,duration_ms)),total,limit,offset,next,previous",
+        },
+      }
+    );
+
+    const tracksData = response.data;
+    console.log("Tracks data from Spotify:", tracksData);
+
+    // Trả về danh sách bài hát
+    res.status(200).json({
+      total: tracksData.total,
+      limit: tracksData.limit,
+      offset: tracksData.offset,
+      next: tracksData.next,
+      previous: tracksData.previous,
+      tracks: tracksData.items.map((item) => ({
+        id: item.track.id,
+        name: item.track.name,
+        artists: item.track.artists.map((artist) => artist.name),
+        album: item.track.album.name,
+        durationMs: item.track.duration_ms,
+      })),
+    });
+  } catch (error) {
+    console.error(
+      "Error fetching playlist tracks:",
+      error.response ? error.response.data : error.message
+    );
+    if (error.response) {
+      const { status, data } = error.response;
+      if (status === 404)
+        return res.status(404).json({ error: "Playlist không tồn tại." });
+      if (status === 401)
+        return res.status(401).json({ error: "Invalid or expired token." });
+      return res.status(status).json(data);
+    }
+    res.status(500).json({ error: "Failed to fetch playlist tracks." });
+  }
+});
+
 module.exports = router;
