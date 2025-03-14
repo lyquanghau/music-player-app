@@ -57,7 +57,6 @@ router.get("/search", checkToken, async (req, res) => {
   }
 });
 
-// Endpoint /playlists
 router.get("/playlists", checkToken, async (req, res) => {
   try {
     const { limit = 20, offset = 0 } = req.query; // Mặc định limit 20, offset 0
@@ -90,7 +89,6 @@ router.get("/playlists", checkToken, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch playlists" });
   }
 });
-
 router.get("/history", checkToken, async (req, res) => {
   try {
     // lấy all lịch sử tìm kiếm
@@ -106,7 +104,6 @@ router.get("/history", checkToken, async (req, res) => {
   }
 });
 
-// /me
 router.get("/me", checkToken, async (req, res) => {
   try {
     const token = req.accessToken;
@@ -152,7 +149,6 @@ router.get("/me", checkToken, async (req, res) => {
   }
 });
 
-// routes/api.js
 router.get("/playlists/:id/tracks", checkToken, async (req, res) => {
   try {
     const { id } = req.params; // Lấy playlist ID từ URL
@@ -211,6 +207,59 @@ router.get("/playlists/:id/tracks", checkToken, async (req, res) => {
       return res.status(status).json(data);
     }
     res.status(500).json({ error: "Failed to fetch playlist tracks." });
+  }
+});
+
+router.get("/playback", checkToken, async (req, res) => {
+  try {
+    const token = req.accessToken;
+
+    // Gọi API Spotify để lấy trạng thái phát nhạc
+    const response = await axios.get("https://api.spotify.com/v1/me/player", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const playbackData = response.data;
+    console.log("Playback state fetched:", playbackData);
+
+    // Trả về dữ liệu JSON từ Spotify
+    res.status(200).json({
+      isPlaying: playbackData.is_playing,
+      device: {
+        id: playbackData.device?.id || null,
+        name: playbackData.device?.name || null,
+        type: playbackData.device?.type || null,
+        volumePercent: playbackData.device?.volume_percent || null,
+      },
+      progressMs: playbackData.progress_ms,
+      track: {
+        id: playbackData.item?.id || null,
+        name: playbackData.item?.name || null,
+        artists: playbackData.item?.artists?.map((artist) => artist.name) || [],
+        album: playbackData.item?.album?.name || null,
+        durationMs: playbackData.item?.duration_ms || null,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Error fetching playback state:",
+      error.response ? error.response.data : error.message
+    );
+    if (error.response) {
+      const { status, data } = error.response;
+      if (status === 429) {
+        return res.status(429).json({ error: "Rate limit exceeded" });
+      }
+      if (status === 401) {
+        return res.status(401).json({ error: "Invalid or expired token" });
+      }
+      if (status === 204) {
+        // Không có thiết bị nào đang phát nhạc
+        return res.status(200).json({ message: "No active device found" });
+      }
+      return res.status(status).json(data);
+    }
+    res.status(500).json({ error: "Failed to fetch playback state" });
   }
 });
 
