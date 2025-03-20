@@ -1,24 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const searchHistorySchema = new mongoose.Schema({
-    query: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    type: {
-        type: String,
-        required: true,
-        enum: ['track', 'artist', 'album'] // giới hạn các loại tìm kiếm
-    },
-    timestamp: {
-        type: Date,
-        default: Date.now
-    },
-    userId: {
-        type: String, // Lưu ID người dùng từ Spotify (nếu có)
-        required: false,
-    },
+  query: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  // Nếu bạn vẫn muốn giữ userId và type, nhưng không bắt buộc
+  userId: { type: String, required: false }, // Không bắt buộc
+  type: { type: String, required: false }, // Không bắt buộc
 });
 
-module.exports = mongoose.model('SearchHistory', searchHistorySchema);
+module.exports = mongoose.model("SearchHistory", searchHistorySchema);
