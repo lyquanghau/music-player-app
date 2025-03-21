@@ -8,6 +8,12 @@ const router = express.Router();
 // Endpoint để tìm kiếm video trên YouTube
 router.get("/search", async (req, res) => {
   const query = req.query.q;
+
+  // Kiểm tra xem query có tồn tại và không rỗng
+  if (!query || query.trim() === "") {
+    return res.status(400).json({ error: "Tham số tìm kiếm (q) là bắt buộc" });
+  }
+
   try {
     const response = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
@@ -29,6 +35,7 @@ router.get("/search", async (req, res) => {
       thumbnail: item.snippet.thumbnails.default.url,
     }));
 
+    // Lưu lịch sử tìm kiếm
     const searchHistory = new SearchHistory({ query });
     await searchHistory.save();
 
@@ -43,7 +50,6 @@ router.get("/search", async (req, res) => {
     }
   }
 });
-
 // Endpoint để lấy lịch sử tìm kiếm
 router.get("/history", async (req, res) => {
   try {
@@ -111,6 +117,48 @@ router.post("/custom-playlists/:id/add-video", async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi thêm video vào playlist:", error);
     res.status(500).json({ error: "Lỗi khi thêm video" });
+  }
+});
+
+// Thêm endpoint /recommend
+router.get("/recommend", async (req, res) => {
+  const { videoId } = req.query; // Lấy videoId từ query params
+
+  // Kiểm tra xem videoId có được cung cấp không
+  if (!videoId) {
+    return res.status(400).json({ error: "videoId là bắt buộc" });
+  }
+
+  try {
+    const response = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
+        params: {
+          part: "snippet",
+          maxResults: 10,
+          relatedToVideoId: videoId, // Tìm video liên quan
+          type: "video",
+          key: process.env.YOUTUBE_API_KEY,
+        },
+      }
+    );
+
+    const items = response.data.items.map((item) => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails.default.url,
+    }));
+
+    res.json({ items });
+  } catch (error) {
+    if (error.response) {
+      console.log("Lỗi từ YouTube:", error.response.data);
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      console.log("Lỗi khác:", error.message);
+      res.status(500).send("Lỗi: " + error.message);
+    }
   }
 });
 
