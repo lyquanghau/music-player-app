@@ -30,8 +30,13 @@ router.get("/search", checkApiKey, async (req, res) => {
     return res.status(400).json({ error: "Tham số tìm kiếm (q) là bắt buộc" });
   }
 
+  // Kiểm tra độ dài query
+  if (query.length < 2) {
+    return res.status(400).json({ error: "Query phải có ít nhất 2 ký tự" });
+  }
+
   try {
-    console.log(`Tìm kiếm video với query: ${query}`); // Log request
+    // Log request
     const response = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
       {
@@ -45,19 +50,66 @@ router.get("/search", checkApiKey, async (req, res) => {
       }
     );
 
-    const items = response.data.items.map((item) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      channel: item.snippet.channelTitle,
-      thumbnail: item.snippet.thumbnails.default.url,
-    }));
+    const items = response.data.items
+      .filter((item) => item.id.videoId) // Lọc các item không có videoId
+      .map((item) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        channel: item.snippet.channelTitle,
+        thumbnail: item.snippet.thumbnails.default.url,
+      }));
 
     // Lưu lịch sử tìm kiếm
     const searchHistory = new SearchHistory({ query });
-    await searchHistory.save();
-    console.log(`Đã lưu lịch sử tìm kiếm: ${query}`); // Log lưu thành công
+    await searchHistory.save(); // Log lưu thành công
 
     res.json({ items });
+  } catch (error) {
+    if (error.response) {
+      console.error("Lỗi từ YouTube API:", error.response.data);
+      res.status(error.response.status).json({
+        error: "Lỗi từ YouTube API",
+        details: error.response.data,
+      });
+    } else {
+      console.error("Lỗi khác:", error.message);
+      res.status(500).json({ error: "Lỗi server", details: error.message });
+    }
+  }
+});
+
+// Endpoint để lấy thông tin video theo ID
+router.get("/video/:id", checkApiKey, async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "videoId là bắt buộc" });
+  }
+
+  try {
+    // Log request
+    const response = await axios.get(
+      "https://www.googleapis.com/youtube/v3/videos",
+      {
+        params: {
+          part: "snippet",
+          id,
+          key: process.env.YOUTUBE_API_KEY,
+        },
+      }
+    );
+
+    if (!response.data.items || response.data.items.length === 0) {
+      return res.status(404).json({ error: "Không tìm thấy video" });
+    }
+    const item = response.data.items[0];
+    const video = {
+      id: item.id,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails.default.url,
+    };
+    res.json(video);
   } catch (error) {
     if (error.response) {
       console.error("Lỗi từ YouTube API:", error.response.data);
@@ -77,8 +129,7 @@ router.get("/history", async (req, res) => {
   try {
     const history = await SearchHistory.find()
       .sort({ timestamp: -1 })
-      .limit(50); // Giới hạn tối đa 50 kết quả
-    console.log(`Lấy lịch sử tìm kiếm: ${history.length} kết quả`); // Log số lượng kết quả
+      .limit(50); // Giới hạn tối đa 50 kết quả // Log số lượng kết quả
     res.json(history);
   } catch (error) {
     console.error("Lỗi khi lấy lịch sử:", error.message);
@@ -130,7 +181,6 @@ router.post("/custom-playlists", async (req, res) => {
 router.get("/custom-playlists", async (req, res) => {
   try {
     const playlists = await CustomPlaylist.find().sort({ createdAt: -1 });
-    console.log(`Lấy danh sách playlists: ${playlists.length} kết quả`); // Log số lượng
     res.json(playlists);
   } catch (error) {
     console.error("Lỗi khi lấy playlists:", error.message);
@@ -168,6 +218,33 @@ router.post("/custom-playlists/:id/add-video", async (req, res) => {
   }
 });
 
+// Xóa video khỏi playlist theo ID
+router.post("/custom-playlists/:id/remove-video", async (req, res) => {
+  const { id } = req.params;
+  const { videoId } = req.body;
+
+  if (!videoId) {
+    return res.status(400).json({ error: "videoId là bắt buộc" });
+  }
+
+  try {
+    const playlist = await CustomPlaylist.findById(id);
+    if (!playlist) {
+      return res.status(404).json({ error: "Không tìm thấy playlist" });
+    }
+
+    playlist.videos = playlist.videos.filter((vid) => vid !== videoId);
+    await playlist.save();
+    console.log(`Đã xóa video ${videoId} khỏi playlist ${id}`); // Log xóa thành công
+    res.json(playlist);
+  } catch (error) {
+    console.error("Lỗi khi xóa video khỏi playlist:", error.message);
+    res
+      .status(500)
+      .json({ error: "Lỗi khi xóa video", details: error.message });
+  }
+});
+
 // Endpoint để lấy video đề xuất
 router.get("/recommend", checkApiKey, async (req, res) => {
   const { videoId } = req.query;
@@ -191,12 +268,14 @@ router.get("/recommend", checkApiKey, async (req, res) => {
       }
     );
 
-    const items = response.data.items.map((item) => ({
-      id: item.id.videoId,
-      title: item.snippet.title,
-      channel: item.snippet.channelTitle,
-      thumbnail: item.snippet.thumbnails.default.url,
-    }));
+    const items = response.data.items
+      .filter((item) => item.id.videoId) // Lọc các item không có videoId
+      .map((item) => ({
+        id: item.id.videoId,
+        title: item.snippet.title,
+        channel: item.snippet.channelTitle,
+        thumbnail: item.snippet.thumbnails.default.url,
+      }));
 
     res.json({ items });
   } catch (error) {

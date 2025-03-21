@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import YouTube from "react-youtube";
+import React, { useState, useRef } from "react";
+import ReactPlayer from "react-player/youtube";
 
 const Player = ({
   videoId,
@@ -13,77 +13,55 @@ const Player = ({
   isShuffle,
   setIsShuffle,
 }) => {
-  const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(50);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
+  const playerRef = useRef(null);
 
-  const onReady = (event) => {
-    setPlayer(event.target);
-    event.target.setVolume(volume);
-    event.target.playVideo();
-    setIsPlaying(true);
-    setDuration(event.target.getDuration());
-  };
-
-  const onStateChange = (event) => {
-    setIsPlaying(event.data === 1);
-    if (event.data === 0) {
+  const onEnded = () => {
+    console.log("Video ended, checking repeat or next");
+    if (isRepeat) {
+      setIsPlaying(true);
+    } else {
       onNext();
     }
   };
 
   const togglePlay = () => {
-    if (player) {
-      isPlaying ? player.pauseVideo() : player.playVideo();
-    }
+    console.log("Toggling play, isPlaying:", isPlaying);
+    setIsPlaying(!isPlaying);
   };
 
-  const handleVolumeChange = (event) => {
-    const newVolume = parseInt(event.target.value);
-    setVolume(newVolume);
-    if (player) {
-      player.setVolume(newVolume);
-    }
+  const handleProgress = (state) => {
+    setPlayed(state.played);
+    console.log(
+      "Progress:",
+      state.playedSeconds,
+      "Duration:",
+      state.loadedSeconds
+    );
   };
 
-  const handleSeekChange = (event) => {
-    const seekTo = parseFloat(event.target.value);
-    setCurrentTime(seekTo);
-    if (player) {
-      player.seekTo(seekTo, true);
-    }
+  const handleDuration = (duration) => {
+    setDuration(duration);
+    console.log("Duration set:", duration);
   };
 
-  useEffect(() => {
-    let interval;
-    if (player && isPlaying) {
-      interval = setInterval(() => {
-        setCurrentTime(player.getCurrentTime());
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [player, isPlaying]);
+  const handleSeekChange = (e) => {
+    const newValue = parseFloat(e.target.value);
+    setPlayed(newValue);
+    playerRef.current.seekTo(newValue, "fraction");
+  };
 
-  useEffect(() => {
-    setPlayer(null);
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setDuration(0);
-  }, [videoId]);
-
-  const formatTime = (time) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
   return (
     <div
       style={{
-        maxWidth: "100%",
-        margin: "0 auto",
         backgroundColor: "#f5f5f5",
         padding: "20px",
         borderRadius: "8px",
@@ -91,71 +69,63 @@ const Player = ({
       }}
     >
       <h2 style={{ fontSize: "1.5em", marginBottom: "10px" }}>
-        Trình phát nhạc
+        {videoInfo?.title || "Chưa chọn video"}
       </h2>
-      {videoId && typeof videoId === "string" ? (
-        <div>
-          <div style={{ display: "none" }}>
-            <YouTube
-              videoId={videoId}
-              opts={{
-                height: "100%",
-                width: "100%",
-                playerVars: { autoplay: 0 },
-              }}
-              onReady={onReady}
-              onStateChange={onStateChange}
+      <p style={{ color: "#666", marginBottom: "20px" }}>
+        {videoInfo?.channel || ""}
+      </p>
+      {videoId ? (
+        <>
+          <ReactPlayer
+            ref={playerRef}
+            url={`https://www.youtube.com/watch?v=${videoId}`}
+            playing={isPlaying}
+            onEnded={onEnded}
+            onProgress={handleProgress}
+            onDuration={handleDuration}
+            width="0"
+            height="0"
+            config={{
+              youtube: {
+                playerVars: { controls: 0, showinfo: 0 },
+              },
+            }}
+            onError={(e) => console.error("ReactPlayer error:", e)}
+          />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "20px",
+            }}
+          >
+            <span>{formatTime(played * duration)}</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step="any"
+              value={played}
+              onChange={handleSeekChange}
+              style={{ flex: 1 }}
             />
+            <span>{formatTime(duration)}</span>
           </div>
-          <div style={{ marginBottom: "15px" }}>
-            <p
-              style={{
-                fontSize: "1.1em",
-                fontWeight: "bold",
-                color: "#333",
-                marginBottom: "5px",
-              }}
-            >
-              Đang phát: {videoInfo?.title || "Không có tiêu đề"} -{" "}
-              {videoInfo?.channel || "Không có kênh"}
-            </p>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span style={{ fontSize: "0.9em", color: "#666" }}>
-                {formatTime(currentTime)}
-              </span>
-              <input
-                type="range"
-                min="0"
-                max={duration || 1}
-                value={currentTime}
-                onChange={handleSeekChange}
-                style={{
-                  flex: 1,
-                  height: "8px",
-                  borderRadius: "4px",
-                  background: `linear-gradient(to right, #007bff ${
-                    (currentTime / (duration || 1)) * 100
-                  }%, #ddd 0%)`,
-                  cursor: "pointer",
-                }}
-              />
-              <span style={{ fontSize: "0.9em", color: "#666" }}>
-                {formatTime(duration)}
-              </span>
-            </div>
-          </div>
-        </div>
+          {/* <div style={{ marginBottom: "10px", color: "#666" }}>
+            Debug: videoId={videoId}, canGoPrevious={canGoPrevious}, canGoNext=
+            {canGoNext}
+          </div> */}
+        </>
       ) : (
-        <p style={{ color: "#666" }}>Chọn một video để phát</p>
+        <p style={{ color: "#666" }}>Vui lòng chọn một video để phát</p>
       )}
       <div
         style={{
           display: "flex",
           gap: "10px",
+          marginTop: "20px",
           justifyContent: "center",
-          marginTop: "10px",
-          alignItems: "center",
-          flexWrap: "wrap",
         }}
       >
         <button
@@ -168,35 +138,21 @@ const Player = ({
             border: "none",
             borderRadius: "4px",
             cursor: canGoPrevious ? "pointer" : "not-allowed",
-            transition: "background-color 0.2s",
           }}
-          onMouseEnter={(e) =>
-            canGoPrevious && (e.currentTarget.style.backgroundColor = "#0056b3")
-          }
-          onMouseLeave={(e) =>
-            canGoPrevious && (e.currentTarget.style.backgroundColor = "#007bff")
-          }
         >
-          Previous
+          Trước
         </button>
         <button
           onClick={togglePlay}
-          disabled={!player}
+          disabled={!videoId}
           style={{
             padding: "8px 16px",
-            backgroundColor: player ? "#007bff" : "#ccc",
+            backgroundColor: videoId ? "#007bff" : "#ccc",
             color: "white",
             border: "none",
             borderRadius: "4px",
-            cursor: player ? "pointer" : "not-allowed",
-            transition: "background-color 0.2s",
+            cursor: videoId ? "pointer" : "not-allowed",
           }}
-          onMouseEnter={(e) =>
-            player && (e.currentTarget.style.backgroundColor = "#0056b3")
-          }
-          onMouseLeave={(e) =>
-            player && (e.currentTarget.style.backgroundColor = "#007bff")
-          }
         >
           {isPlaying ? "Tạm dừng" : "Phát"}
         </button>
@@ -210,83 +166,36 @@ const Player = ({
             border: "none",
             borderRadius: "4px",
             cursor: canGoNext ? "pointer" : "not-allowed",
-            transition: "background-color 0.2s",
           }}
-          onMouseEnter={(e) =>
-            canGoNext && (e.currentTarget.style.backgroundColor = "#0056b3")
-          }
-          onMouseLeave={(e) =>
-            canGoNext && (e.currentTarget.style.backgroundColor = "#007bff")
-          }
         >
-          Next
+          Tiếp
         </button>
         <button
           onClick={() => setIsRepeat(!isRepeat)}
           style={{
             padding: "8px 16px",
-            backgroundColor: isRepeat ? "#28a745" : "#6c757d",
+            backgroundColor: isRepeat ? "#28a745" : "#ccc",
             color: "white",
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
-            transition: "background-color 0.2s",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = isRepeat
-              ? "#218838"
-              : "#5a6268")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = isRepeat
-              ? "#28a745"
-              : "#6c757d")
-          }
         >
-          {isRepeat ? "Tắt lặp" : "Lặp lại"}
+          {isRepeat ? "Tắt lặp" : "Bật lặp"}
         </button>
         <button
           onClick={() => setIsShuffle(!isShuffle)}
           style={{
             padding: "8px 16px",
-            backgroundColor: isShuffle ? "#28a745" : "#6c757d",
+            backgroundColor: isShuffle ? "#28a745" : "#ccc",
             color: "white",
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
-            transition: "background-color 0.2s",
           }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.backgroundColor = isShuffle
-              ? "#218838"
-              : "#5a6268")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.backgroundColor = isShuffle
-              ? "#28a745"
-              : "#6c757d")
-          }
         >
-          {isShuffle ? "Tắt xáo trộn" : "Xáo trộn"}
+          {isShuffle ? "Tắt ngẫu nhiên" : "Bật ngẫu nhiên"}
         </button>
-        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-          <label style={{ fontSize: "0.9em", color: "#333" }}>Âm lượng:</label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={handleVolumeChange}
-            style={{
-              width: "100px",
-              height: "8px",
-              borderRadius: "4px",
-              background: `linear-gradient(to right, #007bff ${volume}%, #ddd 0%)`,
-              cursor: "pointer",
-            }}
-          />
-          <span style={{ fontSize: "0.9em", color: "#666" }}>{volume}%</span>
-        </div>
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Search from "./components/Search";
 import Player from "./components/Player";
+import CustomPlaylists from "./components/CustomPlaylists";
+import "./App.css";
 
 const App = () => {
   const [selectedVideoId, setSelectedVideoId] = useState(null);
@@ -9,22 +11,9 @@ const App = () => {
   const [currentVideoInfo, setCurrentVideoInfo] = useState(null);
   const [isRepeat, setIsRepeat] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
-  const [playlist, setPlaylist] = useState([]); // Danh sách phát
-
-  // Khởi tạo danh sách phát từ localStorage
-  useEffect(() => {
-    const savedPlaylist = localStorage.getItem("playlist");
-    if (savedPlaylist) {
-      setPlaylist(JSON.parse(savedPlaylist));
-    }
-  }, []);
-
-  // Lưu danh sách phát vào localStorage khi thay đổi
-  useEffect(() => {
-    localStorage.setItem("playlist", JSON.stringify(playlist));
-  }, [playlist]);
 
   const handleSelectVideo = (videoId, index) => {
+    console.log("Selecting video:", { videoId, index, videoList });
     setSelectedVideoId(videoId);
     setCurrentIndex(index);
     setCurrentVideoInfo(videoList[index]);
@@ -49,6 +38,7 @@ const App = () => {
     setSelectedVideoId(videoList[nextIndex].id);
     setCurrentIndex(nextIndex);
     setCurrentVideoInfo(videoList[nextIndex]);
+    console.log("Next video:", { nextIndex, videoList: videoList[nextIndex] });
   };
 
   const handlePrevious = () => {
@@ -70,148 +60,88 @@ const App = () => {
     setSelectedVideoId(videoList[prevIndex].id);
     setCurrentIndex(prevIndex);
     setCurrentVideoInfo(videoList[prevIndex]);
+    console.log("Previous video:", {
+      prevIndex,
+      videoList: videoList[prevIndex],
+    });
   };
 
-  const addToPlaylist = (video) => {
-    if (!playlist.some((item) => item.id === video.id)) {
-      setPlaylist([...playlist, video]);
+  const playFromPlaylist = (videoId, index, playlistVideos) => {
+    console.log("Playing from playlist:", { videoId, index, playlistVideos });
+    if (!videoId || !playlistVideos || !Array.isArray(playlistVideos)) {
+      console.error("Dữ liệu không hợp lệ:", {
+        videoId,
+        index,
+        playlistVideos,
+      });
+      return;
     }
-  };
 
-  const removeFromPlaylist = (videoId) => {
-    setPlaylist(playlist.filter((item) => item.id !== videoId));
-  };
+    const validVideos = playlistVideos.filter(
+      (video) =>
+        video.id &&
+        video.title &&
+        video.channel &&
+        typeof video.thumbnail === "string"
+    );
 
-  const playFromPlaylist = (videoId, index) => {
+    if (validVideos.length === 0) {
+      console.error("Không có video hợp lệ trong playlist:", playlistVideos);
+      return;
+    }
+
+    if (index < 0 || index >= validVideos.length) {
+      console.error("Index không hợp lệ:", index);
+      return;
+    }
+
     setSelectedVideoId(videoId);
     setCurrentIndex(index);
-    setCurrentVideoInfo(playlist[index]);
-    setVideoList(playlist); // Chuyển danh sách phát thành danh sách hiện tại
+    setVideoList(validVideos);
+    setCurrentVideoInfo(validVideos[index]);
+    console.log("Updated state:", {
+      selectedVideoId: videoId,
+      currentIndex: index,
+      videoList: validVideos,
+      currentVideoInfo: validVideos[index],
+    });
+  };
+
+  const handleAddToPlaylist = (playlistId, updatedPlaylist) => {
+    console.log("Playlist updated:", { playlistId, updatedPlaylist });
   };
 
   return (
-    <div
-      style={{
-        textAlign: "center",
-        padding: "20px",
-        maxWidth: "1200px",
-        margin: "0 auto",
-      }}
-    >
+    <div className="app-container">
       <h1>Music Player App</h1>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          alignItems: "center",
-          "@media (min-width: 768px)": {
-            flexDirection: "row",
-            alignItems: "flex-start",
-          },
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: "640px",
-            "@media (min-width: 768px)": {
-              width: "50%",
-            },
-          }}
-        >
+      <div className="app-content">
+        <div className="player-container">
           <Player
             videoId={selectedVideoId}
             videoInfo={currentVideoInfo}
             onNext={handleNext}
             onPrevious={handlePrevious}
-            canGoNext={currentIndex < videoList.length - 1}
-            canGoPrevious={currentIndex > 0}
+            canGoNext={
+              currentIndex < videoList.length - 1 && videoList.length > 0
+            }
+            canGoPrevious={currentIndex > 0 && videoList.length > 0}
             isRepeat={isRepeat}
             setIsRepeat={setIsRepeat}
             isShuffle={isShuffle}
             setIsShuffle={setIsShuffle}
           />
         </div>
-        <div
-          style={{
-            width: "100%",
-            "@media (min-width: 768px)": {
-              width: "50%",
-            },
-          }}
-        >
+        <div className="search-container">
           <Search
             onSelectVideo={handleSelectVideo}
             setVideoList={setVideoList}
-            addToPlaylist={addToPlaylist}
+            onAddToPlaylist={handleAddToPlaylist}
           />
-          {playlist.length > 0 && (
-            <div style={{ marginTop: "20px" }}>
-              <h3>Danh sách phát</h3>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  maxHeight: "200px",
-                  overflowY: "auto",
-                }}
-              >
-                {playlist.map((item, index) => (
-                  <li
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px",
-                      borderBottom: "1px solid #eee",
-                      backgroundColor: "#f9f9f9",
-                      transition: "background-color 0.2s",
-                    }}
-                  >
-                    <img
-                      src={item.thumbnail}
-                      alt={item.title}
-                      style={{ width: "50px", borderRadius: "4px" }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: "bold" }}>{item.title}</div>
-                      <div style={{ color: "#666", fontSize: "14px" }}>
-                        {item.channel}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => playFromPlaylist(item.id, index)}
-                      style={{
-                        padding: "5px 10px",
-                        backgroundColor: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Phát
-                    </button>
-                    <button
-                      onClick={() => removeFromPlaylist(item.id)}
-                      style={{
-                        padding: "5px 10px",
-                        backgroundColor: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Xóa
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <CustomPlaylists
+            onSelectVideo={handleSelectVideo}
+            playFromPlaylist={playFromPlaylist}
+            onAddToPlaylist={handleAddToPlaylist}
+          />
         </div>
       </div>
     </div>
