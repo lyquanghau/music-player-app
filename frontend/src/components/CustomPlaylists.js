@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
+import { usePlaylist } from "../PlaylistContext";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 const PLACEHOLDER_IMAGE = "https://placehold.co/50x50";
@@ -10,8 +11,9 @@ const CustomPlaylists = ({
   playFromPlaylist,
   onAddToPlaylist,
 }) => {
-  console.log("Running CustomPlaylists.js version 1.4"); // Cập nhật phiên bản
+  console.log("Running CustomPlaylists.js version 1.7"); // Cập nhật phiên bản
 
+  const { refreshTrigger } = usePlaylist();
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -36,8 +38,23 @@ const CustomPlaylists = ({
   const fetchPlaylists = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/custom-playlists`);
-      console.log("Playlists fetched:", response.data);
+      console.log("Playlists fetched in CustomPlaylists:", response.data);
       setPlaylists(response.data);
+
+      // Cập nhật selectedPlaylist nếu đang xem
+      if (selectedPlaylist) {
+        const updatedPlaylist = response.data.find(
+          (p) => p._id === selectedPlaylist._id
+        );
+        if (updatedPlaylist) {
+          setSelectedPlaylist(updatedPlaylist);
+          if (updatedPlaylist.videos.length > 0) {
+            loadVideoDetails(updatedPlaylist.videos);
+          }
+        } else {
+          setSelectedPlaylist(null); // Nếu playlist không còn tồn tại (bị xóa), đặt lại về null
+        }
+      }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách playlist:", error);
       setNotification({
@@ -131,51 +148,13 @@ const CustomPlaylists = ({
     setShowShareModal(true);
   };
 
-  const handleAddToPlaylist = async (playlistId, videoId) => {
-    try {
-      // Gọi API để thêm video vào playlist
-      const response = await axios.post(
-        `${API_URL}/api/custom-playlists/${playlistId}/add-video`,
-        { videoId }
-      );
-      // Làm mới danh sách playlist sau khi thêm
-      await fetchPlaylists();
-      // Nếu playlist đang được xem, làm mới thông tin video
-      if (selectedPlaylist && selectedPlaylist._id === playlistId) {
-        setSelectedPlaylist(response.data);
-        if (response.data.videos.length > 0) {
-          loadVideoDetails(response.data.videos);
-        }
-      }
-      setNotification({
-        message: "Đã thêm video vào playlist thành công!",
-        type: "success",
-      });
-      setTimeout(() => setNotification(null), 3000);
-    } catch (error) {
-      console.error("Lỗi khi thêm video vào playlist:", error);
-      setNotification({
-        message: "Có lỗi xảy ra khi thêm video!",
-        type: "error",
-      });
-      setTimeout(() => setNotification(null), 3000);
-    }
-  };
-
   const handleRemoveFromPlaylist = async (playlistId, videoId) => {
     try {
       const response = await axios.post(
         `${API_URL}/api/custom-playlists/${playlistId}/remove-video`,
         { videoId }
       );
-      // Làm mới danh sách playlist sau khi xóa
       await fetchPlaylists();
-      if (selectedPlaylist && selectedPlaylist._id === playlistId) {
-        setSelectedPlaylist(response.data);
-        if (response.data.videos.length > 0) {
-          loadVideoDetails(response.data.videos);
-        }
-      }
       setNotification({
         message: "Đã xóa video khỏi playlist!",
         type: "success",
@@ -193,7 +172,7 @@ const CustomPlaylists = ({
 
   useEffect(() => {
     fetchPlaylists();
-  }, []);
+  }, [refreshTrigger]);
 
   return (
     <div
@@ -339,7 +318,7 @@ const CustomPlaylists = ({
             <ul style={{ listStyle: "none", padding: "0" }}>
               {selectedPlaylist.videos.map((videoId, index) => {
                 const video = videoDetails[videoId] || {};
-                console.log(`Video details for ${videoId}:`, video); // Debug
+                console.log(`Video details for ${videoId}:`, video);
                 return (
                   <li
                     key={videoId}

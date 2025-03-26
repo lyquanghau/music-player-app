@@ -4,13 +4,13 @@ import Search from "./components/Search";
 import Player from "./components/Player";
 import CustomPlaylists from "./components/CustomPlaylists";
 import Recommendations from "./components/Recommendations";
-import { usePlaylist } from "./PlaylistContext"; // Import context
+import { usePlaylist } from "./PlaylistContext";
 import "./App.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
 const MainApp = () => {
-  const { triggerPlaylistRefresh } = usePlaylist(); // Sử dụng context
+  const { triggerPlaylistRefresh } = usePlaylist();
   const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -26,7 +26,7 @@ const MainApp = () => {
   const fetchPlaylists = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/custom-playlists`);
-      console.log("Playlists fetched:", response.data);
+      console.log("Playlists fetched in MainApp:", response.data);
       setPlaylists(response.data);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách playlist:", error);
@@ -176,7 +176,7 @@ const MainApp = () => {
         type: "success",
       });
       setTimeout(() => setNotification(null), 3000);
-      fetchPlaylists(); // Làm mới danh sách playlist
+      fetchPlaylists(); // Làm mới danh sách playlist trong modal
     } catch (error) {
       console.error("Lỗi khi thêm video vào playlist:", error);
       setNotification({
@@ -252,7 +252,7 @@ const MainApp = () => {
           <Search
             onSelectVideo={handleSelectVideo}
             setVideoList={setVideoList}
-            onAddToPlaylist={handleOpenPlaylistModal} // Truyền hàm mở modal
+            onAddToPlaylist={handleOpenPlaylistModal}
           />
           <CustomPlaylists
             onSelectVideo={handleSelectVideo}
@@ -262,7 +262,7 @@ const MainApp = () => {
         </div>
       </div>
 
-      {/* {showPlaylistModal && (
+      {showPlaylistModal && (
         <div
           style={{
             position: "fixed",
@@ -276,8 +276,8 @@ const MainApp = () => {
             alignItems: "center",
             zIndex: 1000,
           }}
-        > */}
-      {/* <div
+        >
+          <div
             style={{
               backgroundColor: "#fff",
               padding: "20px",
@@ -323,9 +323,9 @@ const MainApp = () => {
             >
               Đóng
             </button>
-          </div> */}
-      {/* </div>
-      )} */}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

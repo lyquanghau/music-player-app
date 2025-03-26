@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
+import { usePlaylist } from "../PlaylistContext"; // Import context
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
@@ -13,16 +14,13 @@ const debounce = (func, delay) => {
 };
 
 const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
+  const { triggerPlaylistRefresh } = usePlaylist(); // Sử dụng context
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState(() => {
     const cachedResults = localStorage.getItem(`search_${query}`);
     return cachedResults ? JSON.parse(cachedResults) : [];
   });
   const [searchHistory, setSearchHistory] = useState([]);
-  const [playlists, setPlaylists] = useState([]);
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState(null);
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
   // Định nghĩa handleSearch
@@ -67,7 +65,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
 
   useEffect(() => {
     fetchHistory();
-    fetchPlaylists();
   }, []);
 
   const fetchHistory = async () => {
@@ -76,15 +73,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
       setSearchHistory(response.data);
     } catch (error) {
       console.error("Lỗi khi lấy lịch sử tìm kiếm:", error);
-    }
-  };
-
-  const fetchPlaylists = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/custom-playlists`);
-      setPlaylists(response.data);
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách playlist:", error);
     }
   };
 
@@ -119,33 +107,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   const handleHistoryClick = (searchQuery) => {
     setQuery(searchQuery);
     handleSearch();
-  };
-
-  const openPlaylistModal = (video) => {
-    setSelectedVideo(video);
-    setShowPlaylistModal(true);
-  };
-
-  const handleAddToPlaylist = async () => {
-    if (!selectedPlaylistId) {
-      alert("Vui lòng chọn một playlist!");
-      return;
-    }
-    try {
-      const response = await axios.post(
-        `${API_URL}/api/custom-playlists/${selectedPlaylistId}/add-video`,
-        { videoId: selectedVideo.id }
-      );
-      onAddToPlaylist(selectedPlaylistId, response.data);
-      fetchPlaylists();
-      setShowPlaylistModal(false);
-      setSelectedPlaylistId("");
-    } catch (error) {
-      console.error("Lỗi khi thêm video vào playlist:", error);
-      alert(
-        "Có lỗi xảy ra khi thêm video! Vui lòng kiểm tra console để biết thêm chi tiết."
-      );
-    }
   };
 
   return (
@@ -320,7 +281,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
                   </div>
                 </div>
                 <button
-                  onClick={() => openPlaylistModal(item)}
+                  onClick={() => onAddToPlaylist(item.id)} // Chỉ gọi onAddToPlaylist
                   style={{
                     padding: "5px 10px",
                     backgroundColor: "#28a745",
@@ -343,83 +304,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
             ))}
           </ul>
         </>
-      )}
-
-      {showPlaylistModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "300px",
-              textAlign: "center",
-            }}
-          >
-            <h3>Chọn playlist</h3>
-            <select
-              value={selectedPlaylistId}
-              onChange={(e) => setSelectedPlaylistId(e.target.value)}
-              style={{
-                padding: "5px",
-                borderRadius: "4px",
-                border: "1px solid #ccc",
-                width: "100%",
-                marginBottom: "10px",
-              }}
-            >
-              <option value="">Chọn playlist</option>
-              {playlists.map((playlist) => (
-                <option key={playlist._id} value={playlist._id}>
-                  {playlist.name}
-                </option>
-              ))}
-            </select>
-            <div
-              style={{ display: "flex", gap: "10px", justifyContent: "center" }}
-            >
-              <button
-                onClick={handleAddToPlaylist}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#28a745",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Thêm
-              </button>
-              <button
-                onClick={() => setShowPlaylistModal(false)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Hủy
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
