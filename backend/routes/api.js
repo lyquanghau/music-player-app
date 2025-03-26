@@ -190,7 +190,6 @@ router.get("/custom-playlists", async (req, res) => {
   }
 });
 
-// Thêm video vào playlist theo ID
 router.post("/custom-playlists/:id/add-video", async (req, res) => {
   const { id } = req.params;
   const { videoId } = req.body;
@@ -218,7 +217,6 @@ router.post("/custom-playlists/:id/add-video", async (req, res) => {
   }
 });
 
-// Xóa video khỏi playlist theo ID
 router.post("/custom-playlists/:id/remove-video", async (req, res) => {
   const { id } = req.params;
   const { videoId } = req.body;
@@ -245,31 +243,48 @@ router.post("/custom-playlists/:id/remove-video", async (req, res) => {
   }
 });
 
-// Endpoint để lấy video đề xuất
 router.get("/recommend", checkApiKey, async (req, res) => {
   const { videoId } = req.query;
 
-  if (!videoId) {
-    return res.status(400).json({ error: "videoId là bắt buộc" });
+  if (!videoId || typeof videoId !== "string" || videoId.length !== 11) {
+    return res.status(400).json({ error: "Invalid or missing videoId" });
   }
 
   try {
-    console.log(`Lấy video đề xuất cho videoId: ${videoId}`); // Log request
-    const response = await axios.get(
-      "https://www.googleapis.com/youtube/v3/search",
+    // Lấy thông tin video để biết channel
+    const videoResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/videos",
       {
         params: {
           part: "snippet",
-          maxResults: 10,
-          relatedToVideoId: videoId,
-          type: "video",
+          id: videoId,
           key: process.env.YOUTUBE_API_KEY,
         },
       }
     );
 
-    const items = response.data.items
-      .filter((item) => item.id.videoId) // Lọc các item không có videoId
+    if (!videoResponse.data.items || videoResponse.data.items.length === 0) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    const channelTitle = videoResponse.data.items[0].snippet.channelTitle;
+
+    // Tìm kiếm video cùng channel
+    const searchResponse = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
+        params: {
+          part: "snippet",
+          q: channelTitle,
+          type: "video",
+          maxResults: 10,
+          key: process.env.YOUTUBE_API_KEY,
+        },
+      }
+    );
+
+    const recommendations = searchResponse.data.items
+      .filter((item) => item.id.videoId && item.id.videoId !== videoId) // Loại bỏ video hiện tại
       .map((item) => ({
         id: item.id.videoId,
         title: item.snippet.title,
@@ -277,19 +292,16 @@ router.get("/recommend", checkApiKey, async (req, res) => {
         thumbnail: item.snippet.thumbnails.default.url,
       }));
 
-    res.json({ items });
+    res.json(recommendations);
   } catch (error) {
-    if (error.response) {
-      console.error("Lỗi từ YouTube API:", error.response.data);
-      res.status(error.response.status).json({
-        error: "Lỗi từ YouTube API",
-        details: error.response.data,
-      });
-    } else {
-      console.error("Lỗi khác:", error.message);
-      res.status(500).json({ error: "Lỗi server", details: error.message });
-    }
+    console.error(
+      "Error fetching recommendations:",
+      error.response?.data || error.message
+    );
+    res.status(error.response?.status || 500).json({
+      error: "Failed to fetch recommendations",
+      details: error.response?.data || error.message,
+    });
   }
 });
-
 module.exports = router;

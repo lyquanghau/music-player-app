@@ -61,3 +61,86 @@
 .search-container {
   flex: 1;
 }
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.app-container h1 {
+  text-align: center;
+  color: #add8e6;
+  margin-bottom: 30px;
+}
+
+.app-content {
+  display: flex;
+  gap: 20px;
+}
+
+.player-container {
+  flex: 2;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.search-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Cải thiện nút và input */
+button {
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  filter: brightness(90%);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 5px;
+  height: 5px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  background: #007bff;
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Cải thiện danh sách lịch sử tìm kiếm */
+.search-container div[style*="flex-wrap: wrap"] {
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Cải thiện danh sách phát */
+ul {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Căn chỉnh các phần tử */
+h2,
+h3 {
+  color: #333;
+}
+
+p {
+  margin: 0;
+}

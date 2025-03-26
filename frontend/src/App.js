@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Search from "./components/Search";
 import Player from "./components/Player";
 import CustomPlaylists from "./components/CustomPlaylists";
+import Recommendations from "./components/Recommendations"; // Thêm Recommendations
 import "./App.css";
 
 const App = () => {
@@ -12,17 +13,30 @@ const App = () => {
   const [isRepeat, setIsRepeat] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
 
+  // Chọn video từ Search hoặc Recommendations
   const handleSelectVideo = (videoId, index) => {
     console.log("Selecting video:", { videoId, index, videoList });
-    setSelectedVideoId(videoId);
-    setCurrentIndex(index);
-    setCurrentVideoInfo(videoList[index]);
+    if (index >= 0 && index < videoList.length) {
+      setSelectedVideoId(videoId);
+      setCurrentIndex(index);
+      setCurrentVideoInfo(videoList[index]);
+    } else {
+      // Trường hợp chọn từ Recommendations (index = -1)
+      const videoInfo = videoList.find((v) => v.id === videoId) || {
+        id: videoId,
+      };
+      setSelectedVideoId(videoId);
+      setCurrentIndex(-1); // Không thuộc danh sách hiện tại
+      setCurrentVideoInfo(videoInfo);
+    }
   };
 
+  // Chuyển sang video tiếp theo
   const handleNext = () => {
-    if (isRepeat) {
-      setSelectedVideoId(videoList[currentIndex].id);
-      setCurrentVideoInfo(videoList[currentIndex]);
+    if (!videoList.length) return;
+
+    if (isRepeat && currentIndex >= 0) {
+      setSelectedVideoId(videoList[currentIndex].id); // Giữ nguyên video để Player phát lại
       return;
     }
 
@@ -38,13 +52,15 @@ const App = () => {
     setSelectedVideoId(videoList[nextIndex].id);
     setCurrentIndex(nextIndex);
     setCurrentVideoInfo(videoList[nextIndex]);
-    console.log("Next video:", { nextIndex, videoList: videoList[nextIndex] });
+    console.log("Next video:", { nextIndex, video: videoList[nextIndex] });
   };
 
+  // Quay lại video trước
   const handlePrevious = () => {
-    if (isRepeat) {
-      setSelectedVideoId(videoList[currentIndex].id);
-      setCurrentVideoInfo(videoList[currentIndex]);
+    if (!videoList.length) return;
+
+    if (isRepeat && currentIndex >= 0) {
+      setSelectedVideoId(videoList[currentIndex].id); // Giữ nguyên video để Player phát lại
       return;
     }
 
@@ -60,16 +76,14 @@ const App = () => {
     setSelectedVideoId(videoList[prevIndex].id);
     setCurrentIndex(prevIndex);
     setCurrentVideoInfo(videoList[prevIndex]);
-    console.log("Previous video:", {
-      prevIndex,
-      videoList: videoList[prevIndex],
-    });
+    console.log("Previous video:", { prevIndex, video: videoList[prevIndex] });
   };
 
+  // Phát từ playlist
   const playFromPlaylist = (videoId, index, playlistVideos) => {
     console.log("Playing from playlist:", { videoId, index, playlistVideos });
     if (!videoId || !playlistVideos || !Array.isArray(playlistVideos)) {
-      console.error("Dữ liệu không hợp lệ:", {
+      console.error("Invalid playlist data:", {
         videoId,
         index,
         playlistVideos,
@@ -86,12 +100,16 @@ const App = () => {
     );
 
     if (validVideos.length === 0) {
-      console.error("Không có video hợp lệ trong playlist:", playlistVideos);
+      console.error("No valid videos in playlist:", playlistVideos);
+      setSelectedVideoId(null);
+      setCurrentIndex(-1);
+      setCurrentVideoInfo(null);
+      setVideoList([]);
       return;
     }
 
     if (index < 0 || index >= validVideos.length) {
-      console.error("Index không hợp lệ:", index);
+      console.error("Invalid index:", index);
       return;
     }
 
@@ -107,8 +125,10 @@ const App = () => {
     });
   };
 
+  // Xử lý khi thêm video vào playlist
   const handleAddToPlaylist = (playlistId, updatedPlaylist) => {
     console.log("Playlist updated:", { playlistId, updatedPlaylist });
+    // Có thể thêm logic để đồng bộ videoList nếu cần
   };
 
   return (
@@ -122,13 +142,21 @@ const App = () => {
             onNext={handleNext}
             onPrevious={handlePrevious}
             canGoNext={
-              currentIndex < videoList.length - 1 && videoList.length > 0
+              videoList.length > 0 &&
+              (isRepeat || currentIndex < videoList.length - 1)
             }
-            canGoPrevious={currentIndex > 0 && videoList.length > 0}
+            canGoPrevious={
+              videoList.length > 0 && (isRepeat || currentIndex > 0)
+            }
             isRepeat={isRepeat}
             setIsRepeat={setIsRepeat}
             isShuffle={isShuffle}
             setIsShuffle={setIsShuffle}
+          />
+          {/* Tích hợp Recommendations */}
+          <Recommendations
+            currentVideoId={selectedVideoId}
+            onSelectVideo={handleSelectVideo}
           />
         </div>
         <div className="search-container">

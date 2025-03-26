@@ -1,5 +1,14 @@
 import React, { useState, useRef } from "react";
 import ReactPlayer from "react-player/youtube";
+import { MdOutlineVolumeUp } from "react-icons/md";
+import { LuRepeat1 } from "react-icons/lu";
+import { FaRandom } from "react-icons/fa";
+import {
+  GiPreviousButton,
+  GiNextButton,
+  GiPauseButton,
+  GiPlayButton,
+} from "react-icons/gi";
 
 const Player = ({
   videoId,
@@ -16,6 +25,7 @@ const Player = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.8); // Thêm trạng thái âm lượng
   const playerRef = useRef(null);
 
   const onEnded = () => {
@@ -68,7 +78,7 @@ const Player = ({
         boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <h2 style={{ fontSize: "1.5em", marginBottom: "10px" }}>
+      <h2 style={{ fontSize: "1.5em", marginBottom: "10px", color: "#ADD8E6" }}>
         {videoInfo?.title || "Chưa chọn video"}
       </h2>
       <p style={{ color: "#666", marginBottom: "20px" }}>
@@ -80,6 +90,7 @@ const Player = ({
             ref={playerRef}
             url={`https://www.youtube.com/watch?v=${videoId}`}
             playing={isPlaying}
+            volume={volume} // Thêm volume
             onEnded={onEnded}
             onProgress={handleProgress}
             onDuration={handleDuration}
@@ -108,14 +119,33 @@ const Player = ({
               step="any"
               value={played}
               onChange={handleSeekChange}
-              style={{ flex: 1 }}
+              style={{ flex: 1, cursor: "pointer" }}
             />
             <span>{formatTime(duration)}</span>
           </div>
-          {/* <div style={{ marginBottom: "10px", color: "#666" }}>
-            Debug: videoId={videoId}, canGoPrevious={canGoPrevious}, canGoNext=
-            {canGoNext}
-          </div> */}
+          {/* Thêm điều khiển âm lượng */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              marginBottom: "15px",
+            }}
+          >
+            <span>
+              <MdOutlineVolumeUp />
+            </span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              style={{ width: "100px", cursor: "pointer" }}
+            />
+            <span>{Math.round(volume * 100)}%</span>
+          </div>
         </>
       ) : (
         <p style={{ color: "#666" }}>Vui lòng chọn một video để phát</p>
@@ -140,7 +170,7 @@ const Player = ({
             cursor: canGoPrevious ? "pointer" : "not-allowed",
           }}
         >
-          Trước
+          <GiPreviousButton />
         </button>
         <button
           onClick={togglePlay}
@@ -152,9 +182,12 @@ const Player = ({
             border: "none",
             borderRadius: "4px",
             cursor: videoId ? "pointer" : "not-allowed",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
           }}
         >
-          {isPlaying ? "Tạm dừng" : "Phát"}
+          {isPlaying ? <GiPauseButton /> : <GiPlayButton />}
         </button>
         <button
           onClick={onNext}
@@ -168,7 +201,7 @@ const Player = ({
             cursor: canGoNext ? "pointer" : "not-allowed",
           }}
         >
-          Tiếp
+          <GiNextButton />
         </button>
         <button
           onClick={() => setIsRepeat(!isRepeat)}
@@ -181,7 +214,7 @@ const Player = ({
             cursor: "pointer",
           }}
         >
-          {isRepeat ? "Tắt lặp" : "Bật lặp"}
+          {isRepeat ? <LuRepeat1 /> : <LuRepeat1 />}
         </button>
         <button
           onClick={() => setIsShuffle(!isShuffle)}
@@ -194,7 +227,7 @@ const Player = ({
             cursor: "pointer",
           }}
         >
-          {isShuffle ? "Tắt ngẫu nhiên" : "Bật ngẫu nhiên"}
+          {isShuffle ? <FaRandom /> : <FaRandom />}
         </button>
       </div>
     </div>
