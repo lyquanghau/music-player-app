@@ -22,12 +22,19 @@ const Player = ({
   isShuffle,
   setIsShuffle,
 }) => {
+  // Trạng thái quản lý phát video
   const [isPlaying, setIsPlaying] = useState(false);
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8); // Thêm trạng thái âm lượng
+  const [volume, setVolume] = useState(0.8);
+
+  // Trạng thái mới: quản lý loading và lỗi
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const playerRef = useRef(null);
 
+  // Xử lý khi video kết thúc
   const onEnded = () => {
     console.log("Video ended, checking repeat or next");
     if (isRepeat) {
@@ -37,11 +44,13 @@ const Player = ({
     }
   };
 
+  // Chuyển đổi trạng thái play/pause
   const togglePlay = () => {
     console.log("Toggling play, isPlaying:", isPlaying);
     setIsPlaying(!isPlaying);
   };
 
+  // Cập nhật tiến trình phát video
   const handleProgress = (state) => {
     setPlayed(state.played);
     console.log(
@@ -52,17 +61,20 @@ const Player = ({
     );
   };
 
+  // Lấy thời lượng video
   const handleDuration = (duration) => {
     setDuration(duration);
     console.log("Duration set:", duration);
   };
 
+  // Xử lý khi người dùng kéo thanh seek bar
   const handleSeekChange = (e) => {
     const newValue = parseFloat(e.target.value);
     setPlayed(newValue);
     playerRef.current.seekTo(newValue, "fraction");
   };
 
+  // Định dạng thời gian (phút:giây)
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -78,22 +90,39 @@ const Player = ({
         boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
       }}
     >
+      {/* Hiển thị tiêu đề và kênh của video */}
       <h2 style={{ fontSize: "1.5em", marginBottom: "10px", color: "#ADD8E6" }}>
         {videoInfo?.title || "Chưa chọn video"}
       </h2>
       <p style={{ color: "#666", marginBottom: "20px" }}>
         {videoInfo?.channel || ""}
       </p>
+
+      {/* Hiển thị thông báo lỗi hoặc trạng thái tải nếu có */}
+      {error && (
+        <p style={{ color: "#dc3545", marginBottom: "10px" }}>{error}</p>
+      )}
+      {isLoading && (
+        <p style={{ color: "#666", marginBottom: "10px" }}>Đang tải video...</p>
+      )}
+
+      {/* Hiển thị ReactPlayer nếu có videoId, nếu không thì thông báo */}
       {videoId ? (
         <>
           <ReactPlayer
             ref={playerRef}
             url={`https://www.youtube.com/watch?v=${videoId}`}
             playing={isPlaying}
-            volume={volume} // Thêm volume
+            volume={volume}
             onEnded={onEnded}
             onProgress={handleProgress}
             onDuration={handleDuration}
+            onBuffer={() => setIsLoading(true)} // Khi video bắt đầu buffer
+            onBufferEnd={() => setIsLoading(false)} // Khi video buffer xong
+            onError={(e) => {
+              console.error("ReactPlayer error:", e);
+              setError("Có lỗi xảy ra khi phát video!");
+            }} // Xử lý lỗi
             width="0"
             height="0"
             config={{
@@ -101,8 +130,9 @@ const Player = ({
                 playerVars: { controls: 0, showinfo: 0 },
               },
             }}
-            onError={(e) => console.error("ReactPlayer error:", e)}
           />
+
+          {/* Thanh seek bar hiển thị tiến trình phát */}
           <div
             style={{
               display: "flex",
@@ -123,7 +153,8 @@ const Player = ({
             />
             <span>{formatTime(duration)}</span>
           </div>
-          {/* Thêm điều khiển âm lượng */}
+
+          {/* Thanh điều chỉnh âm lượng */}
           <div
             style={{
               display: "flex",
@@ -150,6 +181,8 @@ const Player = ({
       ) : (
         <p style={{ color: "#666" }}>Vui lòng chọn một video để phát</p>
       )}
+
+      {/* Các nút điều khiển */}
       <div
         style={{
           display: "flex",

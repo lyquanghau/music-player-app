@@ -1,30 +1,62 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
-const Recommendations = ({ currentVideoId, onSelectVideo }) => {
-  const [recommendations, setRecommendations] = useState([]);
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (!currentVideoId) {
+// Hàm debounce để giới hạn tần suất gọi API
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
+const Recommendations = ({ currentVideoId, onSelectVideo }) => {
+  const [recommendations, setRecommendations] = useState(() => {
+    // Khởi tạo recommendations từ localStorage nếu có
+    const cachedRecommendations = localStorage.getItem(
+      `recommendations_${currentVideoId}`
+    );
+    return cachedRecommendations ? JSON.parse(cachedRecommendations) : [];
+  });
+
+  const fetchRecommendations = useCallback(
+    debounce(async (videoId) => {
+      if (!videoId) {
         setRecommendations([]);
         return;
       }
+
+      // Kiểm tra cache trước khi gọi API
+      const cachedData = localStorage.getItem(`recommendations_${videoId}`);
+      if (cachedData) {
+        setRecommendations(JSON.parse(cachedData));
+        return;
+      }
+
       try {
-        const response = await axios.get(
-          "http://localhost:8404/api/recommend",
-          {
-            params: { videoId: currentVideoId },
-          }
+        const response = await axios.get(`${API_URL}/api/recommend`, {
+          params: { videoId },
+        });
+        const data = response.data || [];
+        setRecommendations(data);
+        // Lưu vào localStorage
+        localStorage.setItem(
+          `recommendations_${videoId}`,
+          JSON.stringify(data)
         );
-        setRecommendations(response.data || []);
       } catch (error) {
         console.error("Error fetching recommendations:", error);
         setRecommendations([]);
       }
-    };
-    fetchRecommendations();
-  }, [currentVideoId]);
+    }, 500), // Delay 500ms
+    []
+  );
+
+  useEffect(() => {
+    fetchRecommendations(currentVideoId);
+  }, [currentVideoId, fetchRecommendations]);
 
   return (
     <div style={{ marginTop: "20px" }}>
@@ -53,9 +85,13 @@ const Recommendations = ({ currentVideoId, onSelectVideo }) => {
               }}
             >
               <img
-                src={item.thumbnail}
+                src={item.thumbnail || "https://via.placeholder.com/50"}
                 alt={item.title}
                 style={{ width: "50px", borderRadius: "4px" }}
+                loading="lazy" // Thêm lazy loading
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/50";
+                }}
               />
               <div>
                 <div style={{ fontWeight: "bold", color: "#333" }}>

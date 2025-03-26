@@ -1,9 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
+
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
+
+// Hàm debounce để giới hạn tần suất gọi API
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
 
 const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState(() => {
+    const cachedResults = localStorage.getItem(`search_${query}`);
+    return cachedResults ? JSON.parse(cachedResults) : [];
+  });
   const [searchHistory, setSearchHistory] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
@@ -11,40 +25,24 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    fetchHistory();
-    fetchPlaylists();
-  }, []);
-
-  const fetchHistory = async () => {
-    try {
-      const response = await axios.get("http://localhost:8404/api/history");
-      setSearchHistory(response.data);
-    } catch (error) {
-      console.error("Lỗi khi lấy lịch sử tìm kiếm:", error);
-    }
-  };
-
-  const fetchPlaylists = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:8404/api/custom-playlists"
-      );
-      setPlaylists(response.data);
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách playlist:", error);
-    }
-  };
-
+  // Định nghĩa handleSearch
   const handleSearch = async () => {
     if (query.length < 2) {
       setErrorMessage("Vui lòng nhập ít nhất 2 ký tự để tìm kiếm!");
       return;
     }
 
+    const cachedResults = localStorage.getItem(`search_${query}`);
+    if (cachedResults) {
+      const videos = JSON.parse(cachedResults);
+      setSearchResults(videos);
+      setVideoList(videos);
+      return;
+    }
+
     setErrorMessage("");
     try {
-      const response = await axios.get("http://localhost:8404/api/search", {
+      const response = await axios.get(`${API_URL}/api/search`, {
         params: { q: query },
       });
       const videos = response.data.items;
@@ -54,6 +52,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
       }
       setSearchResults(videos);
       setVideoList(videos);
+      localStorage.setItem(`search_${query}`, JSON.stringify(videos));
       fetchHistory();
     } catch (error) {
       console.error("Lỗi khi tìm kiếm:", error);
@@ -63,15 +62,41 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     }
   };
 
+  // Sử dụng useMemo thay vì useCallback để tạo debouncedSearch
+  const debouncedSearch = useMemo(() => debounce(handleSearch, 500), [query]);
+
+  useEffect(() => {
+    fetchHistory();
+    fetchPlaylists();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/history`);
+      setSearchHistory(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy lịch sử tìm kiếm:", error);
+    }
+  };
+
+  const fetchPlaylists = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/custom-playlists`);
+      setPlaylists(response.data);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách playlist:", error);
+    }
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
-      handleSearch();
+      debouncedSearch();
     }
   };
 
   const handleClearHistory = async () => {
     try {
-      await axios.delete("http://localhost:8404/api/history");
+      await axios.delete(`${API_URL}/api/history`);
       setSearchHistory([]);
     } catch (error) {
       console.error("Lỗi khi xóa lịch sử tìm kiếm:", error);
@@ -80,7 +105,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
 
   const handleRemoveHistoryItem = async (index, query) => {
     try {
-      await axios.delete(`http://localhost:8404/api/history/${query}`);
+      await axios.delete(`${API_URL}/api/history/${query}`);
       setSearchHistory((prevHistory) => {
         const newHistory = [...prevHistory];
         newHistory.splice(index, 1);
@@ -108,7 +133,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     }
     try {
       const response = await axios.post(
-        `http://localhost:8404/api/custom-playlists/${selectedPlaylistId}/add-video`,
+        `${API_URL}/api/custom-playlists/${selectedPlaylistId}/add-video`,
         { videoId: selectedVideo.id }
       );
       onAddToPlaylist(selectedPlaylistId, response.data);
@@ -149,7 +174,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           }}
         />
         <button
-          onClick={handleSearch}
+          onClick={debouncedSearch}
           style={{
             padding: "8px 16px",
             backgroundColor: "#007bff",
@@ -176,7 +201,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
         </div>
       )}
 
-      {/* Lịch sử tìm kiếm nằm ngay dưới ô tìm kiếm */}
       <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
         Lịch sử tìm kiếm
       </h3>
@@ -247,7 +271,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
         )}
       </div>
 
-      {/* Kết quả tìm kiếm nằm dưới lịch sử tìm kiếm */}
       {searchResults.length > 0 && (
         <>
           <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
@@ -278,6 +301,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
                   src={item.thumbnail}
                   alt={item.title}
                   style={{ width: "50px", borderRadius: "4px" }}
+                  loading="lazy"
                 />
                 <div style={{ flex: 1 }}>
                   <div

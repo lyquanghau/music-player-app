@@ -2,24 +2,40 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
+const PLACEHOLDER_IMAGE = "https://placehold.co/50x50";
+
 const CustomPlaylists = ({
   onSelectVideo,
   playFromPlaylist,
   onAddToPlaylist,
 }) => {
+  console.log("Running CustomPlaylists.js version 1.4"); // Cập nhật phiên bản
+
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [videoDetails, setVideoDetails] = useState({});
+  const [videoDetails, setVideoDetails] = useState(() => {
+    const cachedDetails = localStorage.getItem("videoDetails");
+    try {
+      console.log("Cached videoDetails from localStorage:", cachedDetails);
+      return cachedDetails ? JSON.parse(cachedDetails) : {};
+    } catch (error) {
+      console.error("Error parsing videoDetails from localStorage:", error);
+      return {};
+    }
+  });
   const [notification, setNotification] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
+  useEffect(() => {
+    localStorage.setItem("videoDetails", JSON.stringify(videoDetails));
+  }, [videoDetails]);
+
   const fetchPlaylists = async () => {
     try {
-      const response = await axios.get(
-        "http://localhost:8404/api/custom-playlists"
-      );
+      const response = await axios.get(`${API_URL}/api/custom-playlists`);
       console.log("Playlists fetched:", response.data);
       setPlaylists(response.data);
     } catch (error) {
@@ -32,43 +48,49 @@ const CustomPlaylists = ({
     }
   };
 
-  const fetchVideoDetails = async (videoId) => {
+  const loadVideoDetails = async (videoIds) => {
+    const missingVideoIds = videoIds.filter(
+      (videoId) => !videoDetails[videoId]
+    );
+    if (missingVideoIds.length === 0) return;
+
     try {
-      const response = await axios.get(
-        `http://localhost:8404/api/video/${videoId}`
-      );
-      console.log(`Video details for ${videoId}:`, response.data);
-      const video = response.data;
-      return {
-        id: video.id || videoId,
-        title: video.title || "Không tìm thấy",
-        channel: video.channel || "Không xác định",
-        thumbnail: video.thumbnail || "",
-      };
+      const response = await axios.post(`${API_URL}/api/videos/batch`, {
+        videoIds: missingVideoIds,
+      });
+      console.log("Video details from API:", response.data);
+      const details = response.data.reduce((acc, video) => {
+        acc[video.id] = video;
+        return acc;
+      }, {});
+      setVideoDetails((prev) => ({ ...prev, ...details }));
     } catch (error) {
-      console.error(
-        `Lỗi khi lấy thông tin video ${videoId}:`,
-        error.response?.data || error.message
-      );
-      return {
-        id: videoId,
-        title: "Không tìm thấy",
-        channel: "Không xác định",
-        thumbnail: "",
-      };
+      console.error("Lỗi khi lấy thông tin video:", error);
+      setNotification({
+        message: "Không thể lấy thông tin video. Vui lòng thử lại sau!",
+        type: "error",
+      });
+      setTimeout(() => setNotification(null), 3000);
+      const fallbackDetails = missingVideoIds.reduce((acc, videoId) => {
+        acc[videoId] = {
+          id: videoId,
+          title: "Không tìm thấy video",
+          channel: "Kênh không xác định",
+          thumbnail: PLACEHOLDER_IMAGE,
+        };
+        return acc;
+      }, {});
+      setVideoDetails((prev) => ({ ...prev, ...fallbackDetails }));
     }
   };
 
   const createPlaylist = async () => {
     if (!newPlaylistName) return;
     try {
-      const response = await axios.post(
-        "http://localhost:8404/api/custom-playlists",
-        {
-          name: newPlaylistName,
-          videos: [],
-        }
-      );
+      const response = await axios.post(`${API_URL}/api/custom-playlists`, {
+        name: newPlaylistName,
+        videos: [],
+      });
       setPlaylists([...playlists, response.data]);
       setNewPlaylistName("");
       setNotification({
@@ -88,15 +110,9 @@ const CustomPlaylists = ({
 
   const handleViewPlaylist = async (playlist) => {
     setSelectedPlaylist(playlist);
-    const details = {};
-    for (const videoId of playlist.videos) {
-      if (!videoDetails[videoId]) {
-        const videoInfo = await fetchVideoDetails(videoId);
-        details[videoId] = videoInfo;
-      }
+    if (playlist.videos.length > 0) {
+      loadVideoDetails(playlist.videos);
     }
-    console.log("Updated video details:", details);
-    setVideoDetails((prev) => ({ ...prev, ...details }));
   };
 
   const copyToClipboard = (text) => {
@@ -110,37 +126,55 @@ const CustomPlaylists = ({
   };
 
   const handleShare = (url) => {
-    // Bỏ tiền tố /api trong URL chia sẻ
     const cleanUrl = url.replace("/api", "");
     setShareUrl(cleanUrl);
     setShowShareModal(true);
   };
 
-  const handleAddToPlaylist = (playlistId, updatedPlaylist) => {
-    setPlaylists((prev) =>
-      prev.map((p) => (p._id === playlistId ? updatedPlaylist : p))
-    );
-    if (selectedPlaylist && selectedPlaylist._id === playlistId) {
-      setSelectedPlaylist(updatedPlaylist);
+  const handleAddToPlaylist = async (playlistId, videoId) => {
+    try {
+      // Gọi API để thêm video vào playlist
+      const response = await axios.post(
+        `${API_URL}/api/custom-playlists/${playlistId}/add-video`,
+        { videoId }
+      );
+      // Làm mới danh sách playlist sau khi thêm
+      await fetchPlaylists();
+      // Nếu playlist đang được xem, làm mới thông tin video
+      if (selectedPlaylist && selectedPlaylist._id === playlistId) {
+        setSelectedPlaylist(response.data);
+        if (response.data.videos.length > 0) {
+          loadVideoDetails(response.data.videos);
+        }
+      }
+      setNotification({
+        message: "Đã thêm video vào playlist thành công!",
+        type: "success",
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error) {
+      console.error("Lỗi khi thêm video vào playlist:", error);
+      setNotification({
+        message: "Có lỗi xảy ra khi thêm video!",
+        type: "error",
+      });
+      setTimeout(() => setNotification(null), 3000);
     }
-    setNotification({
-      message: "Đã thêm video vào playlist thành công!",
-      type: "success",
-    });
-    setTimeout(() => setNotification(null), 3000);
   };
 
   const handleRemoveFromPlaylist = async (playlistId, videoId) => {
     try {
       const response = await axios.post(
-        `http://localhost:8404/api/custom-playlists/${playlistId}/remove-video`,
+        `${API_URL}/api/custom-playlists/${playlistId}/remove-video`,
         { videoId }
       );
-      setPlaylists((prev) =>
-        prev.map((p) => (p._id === playlistId ? response.data : p))
-      );
+      // Làm mới danh sách playlist sau khi xóa
+      await fetchPlaylists();
       if (selectedPlaylist && selectedPlaylist._id === playlistId) {
         setSelectedPlaylist(response.data);
+        if (response.data.videos.length > 0) {
+          loadVideoDetails(response.data.videos);
+        }
       }
       setNotification({
         message: "Đã xóa video khỏi playlist!",
@@ -305,6 +339,7 @@ const CustomPlaylists = ({
             <ul style={{ listStyle: "none", padding: "0" }}>
               {selectedPlaylist.videos.map((videoId, index) => {
                 const video = videoDetails[videoId] || {};
+                console.log(`Video details for ${videoId}:`, video); // Debug
                 return (
                   <li
                     key={videoId}
@@ -317,19 +352,22 @@ const CustomPlaylists = ({
                     }}
                   >
                     <img
-                      src={video.thumbnail || "https://via.placeholder.com/50"}
+                      src={video.thumbnail || PLACEHOLDER_IMAGE}
                       alt={video.title || "Video"}
                       style={{ width: "50px", borderRadius: "4px" }}
+                      loading="lazy"
                       onError={(e) => {
-                        e.target.src = "https://via.placeholder.com/50";
+                        if (e.target.src !== PLACEHOLDER_IMAGE) {
+                          e.target.src = PLACEHOLDER_IMAGE;
+                        }
                       }}
                     />
                     <div style={{ flex: "1" }}>
                       <div style={{ fontWeight: "bold", color: "#333" }}>
-                        {video.title || "Đang tải..."}
+                        {video.title || "Không tìm thấy video"}
                       </div>
                       <div style={{ color: "#666", fontSize: "14px" }}>
-                        {video.channel || ""}
+                        {video.channel || "Kênh không xác định"}
                       </div>
                     </div>
                     <button
@@ -339,9 +377,9 @@ const CustomPlaylists = ({
                             const vid = videoDetails[id] || {};
                             return {
                               id: id,
-                              title: vid.title || "Không tìm thấy",
-                              channel: vid.channel || "Không xác định",
-                              thumbnail: vid.thumbnail || "",
+                              title: vid.title || "Không tìm thấy video",
+                              channel: vid.channel || "Kênh không xác định",
+                              thumbnail: vid.thumbnail || PLACEHOLDER_IMAGE,
                             };
                           }
                         );

@@ -308,4 +308,38 @@ router.get("/recommend", checkApiKey, async (req, res) => {
     });
   }
 });
+
+router.post("/videos/batch", async (req, res) => {
+  const { videoIds } = req.body;
+  if (!videoIds || !Array.isArray(videoIds)) {
+    return res.status(400).json({ error: "videoIds must be an array" });
+  }
+
+  try {
+    // Gọi YouTube Data API để lấy thông tin video
+    const response = await axios.get(
+      "https://www.googleapis.com/youtube/v3/videos",
+      {
+        params: {
+          part: "snippet",
+          id: videoIds.join(","),
+          key: process.env.YOUTUBE_API_KEY, // Đảm bảo API key được cấu hình
+        },
+      }
+    );
+
+    const videos = response.data.items.map((item) => ({
+      id: item.id,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails.high.url,
+    }));
+
+    res.json(videos);
+  } catch (error) {
+    console.error("Error fetching video details:", error);
+    res.status(500).json({ error: "Failed to fetch video details" });
+  }
+});
+
 module.exports = router;
