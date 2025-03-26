@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { QRCodeCanvas } from "qrcode.react";
 
 const CustomPlaylists = ({
   onSelectVideo,
@@ -11,13 +12,15 @@ const CustomPlaylists = ({
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [videoDetails, setVideoDetails] = useState({});
   const [notification, setNotification] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const fetchPlaylists = async () => {
     try {
       const response = await axios.get(
         "http://localhost:8404/api/custom-playlists"
       );
-      console.log("Playlists fetched:", response.data); // Log dữ liệu playlists
+      console.log("Playlists fetched:", response.data);
       setPlaylists(response.data);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách playlist:", error);
@@ -34,9 +37,8 @@ const CustomPlaylists = ({
       const response = await axios.get(
         `http://localhost:8404/api/video/${videoId}`
       );
-      console.log(`Video details for ${videoId}:`, response.data); // Log dữ liệu video
+      console.log(`Video details for ${videoId}:`, response.data);
       const video = response.data;
-      // Đảm bảo dữ liệu hợp lệ
       return {
         id: video.id || videoId,
         title: video.title || "Không tìm thấy",
@@ -93,8 +95,25 @@ const CustomPlaylists = ({
         details[videoId] = videoInfo;
       }
     }
-    console.log("Updated video details:", details); // Log dữ liệu videoDetails
+    console.log("Updated video details:", details);
     setVideoDetails((prev) => ({ ...prev, ...details }));
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setNotification({
+        message: "Đã sao chép URL chia sẻ!",
+        type: "success",
+      });
+      setTimeout(() => setNotification(null), 3000);
+    });
+  };
+
+  const handleShare = (url) => {
+    // Bỏ tiền tố /api trong URL chia sẻ
+    const cleanUrl = url.replace("/api", "");
+    setShareUrl(cleanUrl);
+    setShowShareModal(true);
   };
 
   const handleAddToPlaylist = (playlistId, updatedPlaylist) => {
@@ -243,19 +262,35 @@ const CustomPlaylists = ({
                   {playlist.videos.length} video
                 </div>
               </div>
-              <button
-                onClick={() => handleViewPlaylist(playlist)}
-                style={{
-                  padding: "5px 10px",
-                  backgroundColor: "#007bff",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Xem
-              </button>
+              <div>
+                <button
+                  onClick={() => handleViewPlaylist(playlist)}
+                  style={{
+                    padding: "5px 10px",
+                    backgroundColor: "#007bff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    marginRight: "5px",
+                  }}
+                >
+                  Xem
+                </button>
+                <button
+                  onClick={() => handleShare(playlist.shareUrl)}
+                  style={{
+                    padding: "5px 10px",
+                    backgroundColor: "#28a745",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Chia sẻ
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -282,9 +317,12 @@ const CustomPlaylists = ({
                     }}
                   >
                     <img
-                      src={video.thumbnail || ""}
+                      src={video.thumbnail || "https://via.placeholder.com/50"}
                       alt={video.title || "Video"}
                       style={{ width: "50px", borderRadius: "4px" }}
+                      onError={(e) => {
+                        e.target.src = "https://via.placeholder.com/50";
+                      }}
                     />
                     <div style={{ flex: "1" }}>
                       <div style={{ fontWeight: "bold", color: "#333" }}>
@@ -307,7 +345,7 @@ const CustomPlaylists = ({
                             };
                           }
                         );
-                        console.log("Playlist videos to play:", playlistVideos); // Log dữ liệu trước khi gọi playFromPlaylist
+                        console.log("Playlist videos to play:", playlistVideos);
                         playFromPlaylist(videoId, index, playlistVideos);
                       }}
                       style={{
@@ -342,6 +380,68 @@ const CustomPlaylists = ({
               })}
             </ul>
           )}
+        </div>
+      )}
+
+      {showShareModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "20px",
+              borderRadius: "8px",
+              textAlign: "center",
+              width: "300px",
+            }}
+          >
+            <h3>Chia sẻ danh sách phát</h3>
+            <p style={{ wordBreak: "break-all", marginBottom: "10px" }}>
+              {shareUrl}
+            </p>
+            <button
+              onClick={() => copyToClipboard(shareUrl)}
+              style={{
+                padding: "5px 10px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginBottom: "10px",
+              }}
+            >
+              Sao chép URL
+            </button>
+            <div style={{ margin: "20px 0" }}>
+              <QRCodeCanvas value={shareUrl} size={150} />
+            </div>
+            <button
+              onClick={() => setShowShareModal(false)}
+              style={{
+                padding: "5px 10px",
+                backgroundColor: "#dc3545",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       )}
     </div>

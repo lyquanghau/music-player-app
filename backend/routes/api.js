@@ -181,7 +181,11 @@ router.post("/custom-playlists", async (req, res) => {
 router.get("/custom-playlists", async (req, res) => {
   try {
     const playlists = await CustomPlaylist.find().sort({ createdAt: -1 });
-    res.json(playlists);
+    const playlistsWithShareUrl = playlists.map((playlist) => ({
+      ...playlist._doc,
+      shareUrl: `http://localhost:6704/playlist/${playlist._id}`, // Sửa thành cổng 6704
+    }));
+    res.json(playlistsWithShareUrl);
   } catch (error) {
     console.error("Lỗi khi lấy playlists:", error.message);
     res
