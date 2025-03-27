@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import ReactPlayer from "react-player/youtube";
+import ReactPlayer from "react-player/youtube"; // thư viện hỗ trợ phát video Youtube
 import { MdOutlineVolumeUp } from "react-icons/md";
 import { LuRepeat1 } from "react-icons/lu";
 import { FaRandom } from "react-icons/fa";
@@ -10,6 +10,7 @@ import {
   GiPlayButton,
 } from "react-icons/gi";
 
+// Component Player nhận các props sau:\
 const Player = ({
   videoId,
   videoInfo,
@@ -23,10 +24,10 @@ const Player = ({
   setIsShuffle,
 }) => {
   // Trạng thái quản lý phát video
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [played, setPlayed] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
+  const [isPlaying, setIsPlaying] = useState(false); // true: đang phát, false: tạm dừng
+  const [played, setPlayed] = useState(0); // tiến trình phát video (0-1)
+  const [duration, setDuration] = useState(0); // thời lượng video (giây)
+  const [volume, setVolume] = useState(0.84); // âm lượng (0-1)
 
   // Trạng thái mới: quản lý loading và lỗi
   const [isLoading, setIsLoading] = useState(false);
@@ -38,16 +39,16 @@ const Player = ({
   const onEnded = () => {
     console.log("Video ended, checking repeat or next");
     if (isRepeat) {
-      setIsPlaying(true);
+      setIsPlaying(true); // Phát lại video
     } else {
-      onNext();
+      onNext(); // Chuyển sang video tiếp theo
     }
   };
 
   // Chuyển đổi trạng thái play/pause
   const togglePlay = () => {
     console.log("Toggling play, isPlaying:", isPlaying);
-    setIsPlaying(!isPlaying);
+    setIsPlaying(!isPlaying); // Đảo ngược trạng thái play/pause
   };
 
   // Cập nhật tiến trình phát video
@@ -63,7 +64,7 @@ const Player = ({
 
   // Lấy thời lượng video
   const handleDuration = (duration) => {
-    setDuration(duration);
+    setDuration(duration); // Lưu thời lượng video
     console.log("Duration set:", duration);
   };
 
@@ -121,7 +122,7 @@ const Player = ({
             onBufferEnd={() => setIsLoading(false)} // Khi video buffer xong
             onError={(e) => {
               console.error("ReactPlayer error:", e);
-              setError("Có lỗi xảy ra khi phát video!");
+              setError("Có lỗi xảy ra khi phát nhạc!");
             }} // Xử lý lỗi
             width="0"
             height="0"

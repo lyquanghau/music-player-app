@@ -2,6 +2,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { usePlaylist } from "../PlaylistContext"; // Import context
 
+import { MdDeleteForever, MdOutlinePlaylistAdd } from "react-icons/md";
+
+import { TiDeleteOutline } from "react-icons/ti";
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
 // Hàm debounce để giới hạn tần suất gọi API
@@ -67,6 +71,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     fetchHistory();
   }, []);
 
+  // Hàm lấy lịch sử tìm kiếm
   const fetchHistory = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/history`);
@@ -76,12 +81,14 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     }
   };
 
+  // Xử lý sự kiện khi nhấn Enter
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       debouncedSearch();
     }
   };
 
+  // Xử lý xóa lịch sử tìm kiếm
   const handleClearHistory = async () => {
     try {
       await axios.delete(`${API_URL}/api/history`);
@@ -91,6 +98,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     }
   };
 
+  // Xử lý xóa mục lịch sử tìm kiếm
   const handleRemoveHistoryItem = async (index, query) => {
     try {
       await axios.delete(`${API_URL}/api/history/${query}`);
@@ -126,7 +134,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="rất lâu rồi mới khóc"
+          placeholder="Nghệ sĩ, bài hát, lời bài hát, .v.v"
           style={{
             flex: 1,
             padding: "8px",
@@ -184,7 +192,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
             cursor: "pointer",
           }}
         >
-          Xóa hết
+          <MdDeleteForever />
         </button>
       </div>
       <div
@@ -217,13 +225,13 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
                 onClick={() => handleRemoveHistoryItem(index, item.query)}
                 style={{
                   backgroundColor: "transparent",
-                  border: "none",
+                  // borderRadius: "2px",
                   cursor: "pointer",
                   color: "#dc3545",
                   fontSize: "16px",
                 }}
               >
-                ✕
+                <TiDeleteOutline />
               </button>
             </div>
           ))
@@ -298,7 +306,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
                     (e.currentTarget.style.backgroundColor = "#28a745")
                   }
                 >
-                  Thêm vào danh sách phát
+                  <MdOutlinePlaylistAdd />
                 </button>
               </li>
             ))}

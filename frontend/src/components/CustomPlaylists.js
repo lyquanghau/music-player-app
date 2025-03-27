@@ -3,6 +3,10 @@ import axios from "axios";
 import { QRCodeCanvas } from "qrcode.react";
 import { usePlaylist } from "../PlaylistContext";
 
+import { FaEye, FaShareAltSquare } from "react-icons/fa";
+import { GiPlayButton } from "react-icons/gi";
+import { MdDeleteForever, MdContentCopy } from "react-icons/md";
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 const PLACEHOLDER_IMAGE = "https://placehold.co/50x50";
 
@@ -288,7 +292,7 @@ const CustomPlaylists = ({
                     marginRight: "5px",
                   }}
                 >
-                  Xem
+                  <FaEye />
                 </button>
                 <button
                   onClick={() => handleShare(playlist.shareUrl)}
@@ -301,7 +305,7 @@ const CustomPlaylists = ({
                     cursor: "pointer",
                   }}
                 >
-                  Chia sẻ
+                  <FaShareAltSquare />
                 </button>
               </div>
             </li>
@@ -375,7 +379,7 @@ const CustomPlaylists = ({
                         marginRight: "5px",
                       }}
                     >
-                      Phát
+                      <GiPlayButton />
                     </button>
                     <button
                       onClick={() =>
@@ -390,7 +394,7 @@ const CustomPlaylists = ({
                         cursor: "pointer",
                       }}
                     >
-                      Xóa
+                      <MdDeleteForever />
                     </button>
                   </li>
                 );
@@ -440,7 +444,7 @@ const CustomPlaylists = ({
                 marginBottom: "10px",
               }}
             >
-              Sao chép URL
+              <MdContentCopy />
             </button>
             <div style={{ margin: "20px 0" }}>
               <QRCodeCanvas value={shareUrl} size={150} />
@@ -456,7 +460,7 @@ const CustomPlaylists = ({
                 cursor: "pointer",
               }}
             >
-              Đóng
+              <MdDeleteForever />
             </button>
           </div>
         </div>
