@@ -1,17 +1,20 @@
 const express = require("express");
 const axios = require("axios");
+const NodeCache = require("node-cache");
 const axiosRetry = require("axios-retry").default;
 const SearchHistory = require("../models/SearchHistory");
 const CustomPlaylist = require("../models/CustomPlaylist");
 
 const router = express.Router();
 
+// Khởi tạo cache với TTL mặc định là 10 phút (600 giây)
+const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 }); // checkperiod: kiểm tra dữ liệu hết hạn mỗi 2 phút
+
 // Cấu hình retry cho axios để xử lý rate limit
 axiosRetry(axios, {
   retries: 3, // Thử lại 3 lần nếu gặp lỗi
   retryDelay: (retryCount) => retryCount * 1000, // Delay tăng dần: 1s, 2s, 3s
   retryCondition: (error) => {
-    // Thử lại nếu gặp lỗi 429 (rate limit) hoặc 503 (server tạm thời không khả dụng)
     return (
       error.response &&
       (error.response.status === 429 || error.response.status === 503)
@@ -23,20 +26,22 @@ const checkApiKey = require("../middleware/checkApiKey");
 
 // Endpoint để tìm kiếm video trên YouTube
 router.get("/search", checkApiKey, async (req, res) => {
-  const { q: query } = req.query; // Destructuring query params
-
-  // Kiểm tra xem query có tồn tại và không rỗng
+  const { q: query } = req.query;
   if (!query || query.trim() === "") {
     return res.status(400).json({ error: "Tham số tìm kiếm (q) là bắt buộc" });
   }
-
-  // Kiểm tra độ dài query
   if (query.length < 2) {
     return res.status(400).json({ error: "Query phải có ít nhất 2 ký tự" });
   }
 
+  const cacheKey = `search_${query.toLowerCase()}`;
+  const cacheData = cache.get(cacheKey);
+  if (cacheData) {
+    console.log("Trả về dữ liệu từ cache");
+    return res.json({ items: cacheData, fromCache: true }); // Thêm fromCache: true
+  }
+
   try {
-    // Log request
     const response = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
       {
@@ -49,32 +54,89 @@ router.get("/search", checkApiKey, async (req, res) => {
         },
       }
     );
-
     const items = response.data.items
-      .filter((item) => item.id.videoId) // Lọc các item không có videoId
+      .filter((item) => item.id.videoId)
       .map((item) => ({
         id: item.id.videoId,
         title: item.snippet.title,
         channel: item.snippet.channelTitle,
         thumbnail: item.snippet.thumbnails.default.url,
       }));
-
-    // Lưu lịch sử tìm kiếm
-    const searchHistory = new SearchHistory({ query });
-    await searchHistory.save(); // Log lưu thành công
-
-    res.json({ items });
+    cache.set(cacheKey, items);
+    console.log(`Lưu dữ liệu vào cache: ${query}`);
+    res.json({ items, fromCache: false }); // fromCache: false khi lấy từ API
   } catch (error) {
-    if (error.response) {
-      console.error("Lỗi từ YouTube API:", error.response.data);
-      res.status(error.response.status).json({
-        error: "Lỗi từ YouTube API",
-        details: error.response.data,
-      });
+    console.error("Lỗi từ YouTube API:", error.message);
+    res.status(500).json({ error: "Lỗi server", details: error.message });
+  }
+});
+
+// Endpoint để lưu lịch sử tìm kiếm
+router.post("/history", async (req, res) => {
+  const { query } = req.body;
+  if (!query || query.trim() === "") {
+    return res.status(400).json({ error: "Query là bắt buộc" });
+  }
+
+  try {
+    // Kiểm tra xem query đã tồn tại chưa
+    let existingHistory = await SearchHistory.findOne({ query });
+    if (existingHistory) {
+      // Cập nhật timestamp nếu query đã tồn tại
+      existingHistory.timestamp = new Date();
+      await existingHistory.save();
     } else {
-      console.error("Lỗi khác:", error.message);
-      res.status(500).json({ error: "Lỗi server", details: error.message });
+      // Tạo mới nếu chưa tồn tại
+      const newHistory = new SearchHistory({ query, timestamp: new Date() });
+      await newHistory.save();
     }
+    res.status(200).json({ message: "Đã lưu lịch sử tìm kiếm" });
+  } catch (error) {
+    console.error("Lỗi khi lưu lịch sử tìm kiếm:", error.message);
+    res
+      .status(500)
+      .json({ error: "Lỗi khi lưu lịch sử", details: error.message });
+  }
+});
+
+// Endpoint để lấy lịch sử tìm kiếm
+router.get("/history", async (req, res) => {
+  try {
+    const history = await SearchHistory.find()
+      .sort({ timestamp: -1 })
+      .limit(50); // Giới hạn tối đa 50 kết quả
+    console.log(`Số lượng lịch sử tìm kiếm: ${history.length}`); // Log số lượng kết quả
+    res.json(history);
+  } catch (error) {
+    console.error("Lỗi khi lấy lịch sử:", error.message);
+    res
+      .status(500)
+      .json({ error: "Lỗi khi lấy lịch sử", details: error.message });
+  }
+});
+
+// Endpoint để xóa toàn bộ lịch sử tìm kiếm
+router.delete("/history", async (req, res) => {
+  try {
+    const result = await SearchHistory.deleteMany({});
+    console.log(`Đã xóa ${result.deletedCount} lịch sử tìm kiếm`); // Log số lượng xóa
+    res.json({ message: "Đã xóa toàn bộ lịch sử tìm kiếm" });
+  } catch (error) {
+    console.error("Lỗi khi xóa lịch sử:", error.message);
+    res
+      .status(500)
+      .json({ error: "Lỗi khi xóa lịch sử", details: error.message });
+  }
+});
+
+// Backend (thêm vào router.js)
+router.delete("/history/:query", async (req, res) => {
+  const { query } = req.params;
+  try {
+    const result = await SearchHistory.deleteOne({ query });
+    res.json({ message: `Đã xóa lịch sử cho ${query}` });
+  } catch (error) {
+    res.status(500).json({ error: "Lỗi khi xóa", details: error.message });
   }
 });
 
@@ -84,6 +146,15 @@ router.get("/video/:id", checkApiKey, async (req, res) => {
 
   if (!id) {
     return res.status(400).json({ error: "videoId là bắt buộc" });
+  }
+
+  const cacheKey = `video_${id}`;
+  const cacheData = cache.get(cacheKey);
+
+  // Nếu có dữ liệu trong cache, trả về ngay lập tức
+  if (cacheData) {
+    console.log("Trả về dữ liệu từ cache"); // Log trả về từ cache
+    return res.json(cacheData);
   }
 
   try {
@@ -109,6 +180,10 @@ router.get("/video/:id", checkApiKey, async (req, res) => {
       channel: item.snippet.channelTitle,
       thumbnail: item.snippet.thumbnails.default.url,
     };
+
+    // Lưu vào cache
+    cache.set(cacheKey, video); // Lưu dữ liệu vào cache với key tương ứng
+    console.log(`Lưu dữ liệu vào cache: ${id}`); // Log lưu thành công
     res.json(video);
   } catch (error) {
     if (error.response) {
@@ -121,35 +196,6 @@ router.get("/video/:id", checkApiKey, async (req, res) => {
       console.error("Lỗi khác:", error.message);
       res.status(500).json({ error: "Lỗi server", details: error.message });
     }
-  }
-});
-
-// Endpoint để lấy lịch sử tìm kiếm
-router.get("/history", async (req, res) => {
-  try {
-    const history = await SearchHistory.find()
-      .sort({ timestamp: -1 })
-      .limit(50); // Giới hạn tối đa 50 kết quả // Log số lượng kết quả
-    res.json(history);
-  } catch (error) {
-    console.error("Lỗi khi lấy lịch sử:", error.message);
-    res
-      .status(500)
-      .json({ error: "Lỗi khi lấy lịch sử", details: error.message });
-  }
-});
-
-// Endpoint để xóa toàn bộ lịch sử tìm kiếm
-router.delete("/history", async (req, res) => {
-  try {
-    const result = await SearchHistory.deleteMany({});
-    console.log(`Đã xóa ${result.deletedCount} lịch sử tìm kiếm`); // Log số lượng xóa
-    res.json({ message: "Đã xóa toàn bộ lịch sử tìm kiếm" });
-  } catch (error) {
-    console.error("Lỗi khi xóa lịch sử:", error.message);
-    res
-      .status(500)
-      .json({ error: "Lỗi khi xóa lịch sử", details: error.message });
   }
 });
 
@@ -183,7 +229,7 @@ router.get("/custom-playlists", async (req, res) => {
     const playlists = await CustomPlaylist.find().sort({ createdAt: -1 });
     const playlistsWithShareUrl = playlists.map((playlist) => ({
       ...playlist._doc,
-      shareUrl: `http://localhost:6704/playlist/${playlist._id}`, // Sửa thành cổng 6704
+      shareUrl: `http://localhost:8404/playlist/${playlist._id}`, // Sửa thành cổng 8404
     }));
     res.json(playlistsWithShareUrl);
   } catch (error) {
@@ -210,7 +256,7 @@ router.post("/custom-playlists/:id/add-video", async (req, res) => {
     if (!playlist.videos.includes(videoId)) {
       playlist.videos.push(videoId);
       await playlist.save();
-      console.log(`Đã thêm video ${videoId} vào playlist ${id}`); // Log thêm thành công
+      console.log(`Đã thêm bài hát ${videoId} vào playlist ${id}`); // Log thêm thành công
     }
     res.json(playlist);
   } catch (error) {

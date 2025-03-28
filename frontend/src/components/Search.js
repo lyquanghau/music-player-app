@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react"; // Thêm useCallback
 import axios from "axios";
-import { usePlaylist } from "../PlaylistContext"; // Import context
 
 import { MdDeleteForever, MdOutlinePlaylistAdd } from "react-icons/md";
 
@@ -18,17 +17,14 @@ const debounce = (func, delay) => {
 };
 
 const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
-  const { triggerPlaylistRefresh } = usePlaylist(); // Sử dụng context
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState(() => {
-    const cachedResults = localStorage.getItem(`search_${query}`);
-    return cachedResults ? JSON.parse(cachedResults) : [];
-  });
+  const [searchResults, setSearchResults] = useState([]); // Sửa: Khởi tạo rỗng
   const [searchHistory, setSearchHistory] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [dataSource, setDataSource] = useState("");
 
-  // Định nghĩa handleSearch
-  const handleSearch = async () => {
+  // Định nghĩa handleSearch với useCallback
+  const handleSearch = useCallback(async () => {
     if (query.length < 2) {
       setErrorMessage("Vui lòng nhập ít nhất 2 ký tự để tìm kiếm!");
       return;
@@ -36,36 +32,79 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
 
     const cachedResults = localStorage.getItem(`search_${query}`);
     if (cachedResults) {
-      const videos = JSON.parse(cachedResults);
-      setSearchResults(videos);
-      setVideoList(videos);
-      return;
+      try {
+        const { videos, timestamp } = JSON.parse(cachedResults);
+        localStorage.setItem(
+          `search_${query}`,
+          JSON.stringify({ videos, timestamp: Date.now() })
+        );
+        if (Date.now() - timestamp < 600000) {
+          // 10 phút
+          console.log("Lấy từ cache:", videos);
+          setSearchResults(videos);
+          setVideoList(videos);
+          setDataSource("localStorage"); // Dữ liệu từ localStorage
+          return;
+        }
+      } catch (e) {
+        console.error("Dữ liệu localStorage không hợp lệ:", e);
+        localStorage.removeItem(`search_${query}`); // Xóa cache lỗi
+      }
     }
 
     setErrorMessage("");
     try {
+      console.log("Gọi API:", `${API_URL}/api/search?q=${query}`);
       const response = await axios.get(`${API_URL}/api/search`, {
         params: { q: query },
       });
       const videos = response.data.items;
       console.log("Search results:", videos);
+
       if (!Array.isArray(videos)) {
         throw new Error("Dữ liệu trả về không phải là mảng!");
       }
       setSearchResults(videos);
       setVideoList(videos);
-      localStorage.setItem(`search_${query}`, JSON.stringify(videos));
+      localStorage.setItem(
+        `search_${query}`,
+        JSON.stringify({ videos, timestamp: Date.now() }) // Sửa: Lưu đúng định dạng
+      );
+      setDataSource(response.data.fromCache ? "backend cache" : "API"); // Kiểm tra từ backend
+
+      // Thêm: Lưu lịch sử tìm kiếm
+      try {
+        const historyResponse = await axios.post(
+          `${API_URL}/api/history`,
+          { query },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log("Đã lưu lịch sử tìm kiếm:", query, historyResponse.data);
+      } catch (error) {
+        console.error(
+          "Lỗi khi lưu lịch sử tìm kiếm:",
+          error.message,
+          error.response?.data
+        );
+      }
+
       fetchHistory();
     } catch (error) {
-      console.error("Lỗi khi tìm kiếm:", error);
+      console.error("Lỗi khi tìm kiếm:", error.message, error.response?.data); // Thêm log chi tiết
       setErrorMessage(
         error.response?.data?.message || "Có lỗi xảy ra khi tìm kiếm!"
       );
     }
-  };
+  }, [query, setVideoList]); // Dependency của handleSearch
 
-  // Sử dụng useMemo thay vì useCallback để tạo debouncedSearch
-  const debouncedSearch = useMemo(() => debounce(handleSearch, 500), [query]);
+  const debouncedSearch = useMemo(
+    () => debounce(handleSearch, 500),
+    [handleSearch] // Đã thêm handleSearch vào dependency
+  );
 
   useEffect(() => {
     fetchHistory();
@@ -76,8 +115,13 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     try {
       const response = await axios.get(`${API_URL}/api/history`);
       setSearchHistory(response.data);
+      console.log("Lịch sử tìm kiếm:", response.data); // Thêm log để debug
     } catch (error) {
-      console.error("Lỗi khi lấy lịch sử tìm kiếm:", error);
+      console.error(
+        "Lỗi khi lấy lịch sử tìm kiếm:",
+        error.message,
+        error.response?.data
+      );
     }
   };
 
@@ -124,7 +168,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
         padding: "20px",
         borderRadius: "8px",
         boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-        position: "relative",
+        // position: "relative",
       }}
     >
       <h2 style={{ fontSize: "1.5em", marginBottom: "10px" }}>Tìm kiếm nhạc</h2>
@@ -151,7 +195,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
             border: "none",
             borderRadius: "4px",
             cursor: "pointer",
-            transition: "background-color 0.2s",
+            // transition: "background-color 0.2s",
           }}
           onMouseEnter={(e) =>
             (e.currentTarget.style.backgroundColor = "#0056b3")
@@ -245,6 +289,10 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
             Kết quả tìm kiếm
           </h3>
+          <p style={{ color: "#666", marginBottom: "10px" }}>
+            Nguồn: {dataSource}
+          </p>{" "}
+          {/* Hiển thị nguồn dữ liệu */}
           <ul
             style={{
               listStyle: "none",

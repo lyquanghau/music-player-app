@@ -24,7 +24,7 @@ const Player = ({
   setIsShuffle,
 }) => {
   // Trạng thái quản lý phát video
-  const [isPlaying, setIsPlaying] = useState(false); // true: đang phát, false: tạm dừng
+  const [isPlaying, setIsPlaying] = useState(true); // true: đang phát, false: tạm dừng
   const [played, setPlayed] = useState(0); // tiến trình phát video (0-1)
   const [duration, setDuration] = useState(0); // thời lượng video (giây)
   const [volume, setVolume] = useState(0.84); // âm lượng (0-1)
