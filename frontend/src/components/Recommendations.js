@@ -66,7 +66,7 @@ const Recommendations = ({ currentVideoId, onSelectVideo }) => {
           style={{
             listStyle: "none",
             padding: "0",
-            maxHeight: "200px",
+            maxHeight: "500px",
             overflowY: "auto",
           }}
         >

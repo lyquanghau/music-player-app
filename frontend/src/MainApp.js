@@ -43,19 +43,35 @@ const MainApp = () => {
   }, []);
 
   // Chọn video để phát
-  const handleSelectVideo = (videoId, index) => {
+  // Trong MainApp.js
+  const handleSelectVideo = async (videoId, index) => {
     console.log("Selecting video:", { videoId, index, videoList });
+
     if (index >= 0 && index < videoList.length) {
+      // Trường hợp video thuộc danh sách phát hiện tại
       setSelectedVideoId(videoId);
       setCurrentIndex(index);
       setCurrentVideoInfo(videoList[index]);
     } else {
-      const videoInfo = videoList.find((v) => v.id === videoId) || {
-        id: videoId,
-      };
-      setSelectedVideoId(videoId);
-      setCurrentIndex(-1);
-      setCurrentVideoInfo(videoInfo);
+      // Trường hợp video từ đề xuất hoặc không thuộc danh sách phát
+      try {
+        // Gọi API để lấy thông tin video
+        const response = await axios.get(`${API_URL}/api/video/${videoId}`);
+        const videoInfo = response.data;
+
+        // Cập nhật trạng thái
+        setSelectedVideoId(videoId);
+        setCurrentIndex(-1); // Không thuộc danh sách phát
+        setCurrentVideoInfo(videoInfo); // Đầy đủ thông tin từ API
+        setVideoList([videoInfo]); // Đặt video này làm danh sách phát tạm thời
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin video:", error);
+        setNotification({
+          message: "Không thể tải thông tin video!",
+          type: "error",
+        });
+        setTimeout(() => setNotification(null), 3000);
+      }
     }
   };
 
