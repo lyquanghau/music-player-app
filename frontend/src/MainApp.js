@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Search from "./components/Search";
 import Player from "./components/Player";
@@ -11,6 +12,7 @@ const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
 const MainApp = () => {
   const { triggerPlaylistRefresh } = usePlaylist();
+  const navigate = useNavigate();
   const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
@@ -45,6 +47,7 @@ const MainApp = () => {
   // Chọn video để phát
   // Trong MainApp.js
   const handleSelectVideo = async (videoId, index) => {
+    navigate(`/play/${videoId}`); // Thêm useNavigate từ react-router-dom
     console.log("Selecting video:", { videoId, index, videoList });
 
     if (index >= 0 && index < videoList.length) {

@@ -27,9 +27,11 @@ app.get("/", (req, res) => {
 
 const apiRoutes = require("./routes/api");
 const publicRoutes = require("./routes/public"); // Thêm route công khai
+const authRoutes = require("./routes/auth");
 
 app.use("/api", apiRoutes); // Các route API có tiền tố /api
 app.use("/", publicRoutes); // Route công khai không có tiền tố
+app.use("/api/auth", authRoutes); //
 
 function handleError(error, res) {
   if (error.response) {
