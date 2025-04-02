@@ -38,7 +38,9 @@ router.get("/search", checkApiKey, async (req, res) => {
   const cacheData = cache.get(cacheKey);
   if (cacheData) {
     console.log("Trả về dữ liệu từ cache");
-    return res.json({ items: cacheData, fromCache: true }); // Thêm fromCache: true
+    return res
+      .set("X-Cache", "hit")
+      .json({ items: cacheData, fromCache: true }); // Thêm fromCache: true
   }
 
   try {
@@ -64,7 +66,7 @@ router.get("/search", checkApiKey, async (req, res) => {
       }));
     cache.set(cacheKey, items);
     console.log(`Lưu dữ liệu vào cache: ${query}`);
-    res.json({ items, fromCache: false }); // fromCache: false khi lấy từ API
+    res.set("X-Cache", "miss").json({ items, fromCache: false }); // fromCache: false khi lấy từ API
   } catch (error) {
     console.error("Lỗi từ YouTube API:", error.message);
     res.status(500).json({ error: "Lỗi server", details: error.message });

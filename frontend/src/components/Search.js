@@ -34,10 +34,6 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     if (cachedResults) {
       try {
         const { videos, timestamp } = JSON.parse(cachedResults);
-        localStorage.setItem(
-          `search_${query}`,
-          JSON.stringify({ videos, timestamp: Date.now() })
-        );
         if (Date.now() - timestamp < 600000) {
           // 10 phút
           console.log("Lấy từ cache:", videos);
@@ -47,6 +43,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           return;
         }
       } catch (e) {
+        // Thêm tham số (e) cho catch
         console.error("Dữ liệu localStorage không hợp lệ:", e);
         localStorage.removeItem(`search_${query}`); // Xóa cache lỗi
       }
@@ -68,9 +65,11 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
       setVideoList(videos);
       localStorage.setItem(
         `search_${query}`,
-        JSON.stringify({ videos, timestamp: Date.now() }) // Sửa: Lưu đúng định dạng
+        JSON.stringify({ videos, timestamp: Date.now() }) // Lưu đúng định dạng
       );
-      setDataSource(response.data.fromCache ? "backend cache" : "API"); // Kiểm tra từ backend
+      setDataSource(
+        response.headers["x-cache"] === "hit" ? "backend cache" : "API"
+      ); // Sửa chính tả
 
       // Thêm: Lưu lịch sử tìm kiếm
       try {
@@ -84,6 +83,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           }
         );
         console.log("Đã lưu lịch sử tìm kiếm:", query, historyResponse.data);
+        fetchHistory();
       } catch (error) {
         console.error(
           "Lỗi khi lưu lịch sử tìm kiếm:",
@@ -91,10 +91,8 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           error.response?.data
         );
       }
-
-      fetchHistory();
     } catch (error) {
-      console.error("Lỗi khi tìm kiếm:", error.message, error.response?.data); // Thêm log chi tiết
+      console.error("Lỗi khi tìm kiếm:", error.message, error.response?.data);
       setErrorMessage(
         error.response?.data?.message || "Có lỗi xảy ra khi tìm kiếm!"
       );

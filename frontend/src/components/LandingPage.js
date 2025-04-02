@@ -1,5 +1,6 @@
-import React, { useState } from "react"; // Thêm useState
-import { useAuth } from "../AuthContext"; // Đúng đường dẫn
+import React, { useState } from "react";
+import { useAuth } from "../AuthContext";
+import loginBackground from "../assets/login.png"; // Đường dẫn đến hình login.png
 
 const LandingPage = () => {
   const { login } = useAuth();
@@ -16,17 +17,19 @@ const LandingPage = () => {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
-      {/* Bên trái: Poster */}
-      <div style={{ flex: 1, background: "#f0f0f0" }}>
-        <img
-          src="https://via.placeholder.com/600x800?text=Poster"
-          alt="Poster"
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        />
-      </div>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        backgroundImage: `url(${loginBackground})`, // Sử dụng login.png làm nền
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* Bên trái: Biểu tượng hoặc không gian trống */}
+      <div style={{ flex: 1 }}></div>
 
-      {/* Bên phải: Đăng nhập/Đăng ký */}
+      {/* Bên phải: Form đăng nhập */}
       <div
         style={{
           flex: 1,
@@ -34,31 +37,109 @@ const LandingPage = () => {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <h2>Đăng nhập</h2>
-        <form onSubmit={handleLogin}>
-          <input
-            type="text"
-            placeholder="Tên đăng nhập"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ display: "block", margin: "10px 0", padding: "8px" }}
-          />
-          <input
-            type="password"
-            placeholder="Mật khẩu"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ display: "block", margin: "10px 0", padding: "8px" }}
-          />
-          <button type="submit" style={{ padding: "8px 16px" }}>
-            Đăng nhập
-          </button>
-        </form>
-        <p>
-          Chưa có tài khoản? <a href="/register">Đăng ký</a>
-        </p>
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.1)", // Nền trong suốt kiểu glassmorphism
+            backdropFilter: "blur(10px)", // Hiệu ứng mờ
+            borderRadius: "15px",
+            padding: "30px",
+            width: "100%",
+            maxWidth: "400px",
+            boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+          }}
+        >
+          <h2
+            style={{
+              color: "#fff",
+              fontSize: "2rem",
+              textAlign: "center",
+              marginBottom: "20px",
+              fontFamily: "Arial, sans-serif",
+            }}
+          >
+            Sky Music
+          </h2>
+          <form onSubmit={handleLogin}>
+            <input
+              type="text"
+              placeholder="Tên đăng nhập"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={{
+                display: "block",
+                width: "100%",
+                margin: "10px 0",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "none",
+                background: "rgba(255, 255, 255, 0.2)",
+                color: "#fff",
+                fontSize: "1rem",
+                outline: "none",
+                fontFamily: "Arial, sans-serif",
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Mật khẩu"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={{
+                display: "block",
+                width: "100%",
+                margin: "10px 0",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "none",
+                background: "rgba(255, 255, 255, 0.2)",
+                color: "#fff",
+                fontSize: "1rem",
+                outline: "none",
+                fontFamily: "Arial, sans-serif",
+              }}
+            />
+            <div style={{ textAlign: "center", margin: "10px 0" }}>
+              <a
+                href="/reset-password"
+                style={{
+                  color: "#fff",
+                  fontSize: "0.9rem",
+                  textDecoration: "underline",
+                  fontFamily: "Arial, sans-serif",
+                }}
+              >
+                Quên mật khẩu?
+              </a>
+            </div>
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "none",
+                background: "rgba(255, 255, 255, 0.3)",
+                color: "#fff",
+                fontSize: "1rem",
+                cursor: "pointer",
+                fontFamily: "Arial, sans-serif",
+                transition: "background 0.3s",
+              }}
+              onMouseOver={(e) =>
+                (e.target.style.background = "rgba(255, 255, 255, 0.5)")
+              }
+              onMouseOut={(e) =>
+                (e.target.style.background = "rgba(255, 255, 255, 0.3)")
+              }
+            >
+              Đăng nhập
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
