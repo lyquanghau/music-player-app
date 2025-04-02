@@ -80,7 +80,14 @@ const MainApp = () => {
 
   // Chuyển bài tiếp theo
   const handleNext = () => {
-    if (!videoList.length) return;
+    if (!videoList.length) {
+      setNotification({
+        message: "Danh sách phát trống! Vui lòng chọn video.",
+        type: "error",
+      });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
 
     if (isRepeat && currentIndex >= 0) {
       setSelectedVideoId(videoList[currentIndex].id);
@@ -104,7 +111,14 @@ const MainApp = () => {
 
   // Chuyển bài trước
   const handlePrevious = () => {
-    if (!videoList.length) return;
+    if (!videoList.length) {
+      setNotification({
+        message: "Danh sách phát trống! Vui lòng chọn video.",
+        type: "error",
+      });
+      setTimeout(() => setNotification(null), 3000);
+      return;
+    }
 
     if (isRepeat && currentIndex >= 0) {
       setSelectedVideoId(videoList[currentIndex].id);
@@ -221,7 +235,7 @@ const MainApp = () => {
             borderRadius: "4px",
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
             zIndex: 1000,
-            animation: "slideIn 0.5s ease-out",
+            animation: "slideIn 0.5s ease-out, fadeOut 0.5s ease-out 2.5s",
           }}
         >
           {notification.message}
@@ -236,6 +250,14 @@ const MainApp = () => {
                   transform: translateY(0);
                   opacity: 1;
                 }
+              }
+              @ketframes fadeOut{
+              from{
+              opacity:1;
+              }
+              to{
+              opacity:0
+              }
               }
             `}
           </style>

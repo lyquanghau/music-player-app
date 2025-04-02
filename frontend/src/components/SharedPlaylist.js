@@ -138,7 +138,7 @@ const SharedPlaylist = () => {
             borderRadius: "4px",
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
             zIndex: 1000,
-            animation: "slideIn 0.5s ease-out",
+            animation: "slideIn 0.5s ease-out, fadeOut 0.5s ease-out 2.5s",
           }}
         >
           {notification.message}
@@ -153,6 +153,14 @@ const SharedPlaylist = () => {
                   transform: translateY(0);
                   opacity: 1;
                 }
+                @keyframes fadeOut {
+                from{
+                  opacity:1;
+                }
+                to{
+                  opacity: 0;
+                }
+              }
               }
             `}
           </style>
