@@ -324,6 +324,37 @@ const CustomPlaylists = ({
       {selectedPlaylist && (
         <div style={{ marginTop: "20px" }}>
           <h3>{selectedPlaylist.name}</h3>
+          <button
+            onClick={() => {
+              const playlistVideos = selectedPlaylist.videos.map((id) => {
+                const vid = videoDetails[id] || {};
+                return {
+                  id: id,
+                  title: vid.title || "Không tìm thấy video",
+                  channel: vid.channel || "Kênh không xác định",
+                  thumbnail: vid.thumbnail || "https://via.placeholder.com/50", // Fallback image
+                };
+              });
+              playFromPlaylist(playlistVideos[0].id, 0, playlistVideos);
+            }}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              marginBottom: "10px",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#0056b3")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "#007bff")
+            }
+          >
+            Phát tất cả
+          </button>
           {selectedPlaylist.videos.length === 0 ? (
             <p>Chưa có video trong playlist này</p>
           ) : (

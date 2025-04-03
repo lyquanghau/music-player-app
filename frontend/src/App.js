@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import MainApp from "./MainApp";
 import SharedPlaylist from "./components/SharedPlaylist";
 import LandingPage from "./components/LandingPage";
+import SignUpPage from "./components/SignUpPage";
 import PlayerPage from "./components/PlayerPage";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { PlaylistProvider } from "./PlaylistContext"; // Thêm PlaylistProvider
@@ -15,6 +16,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={user ? <MainApp /> : <LandingPage />} />
+      <Route path="/signup" element={user ? <MainApp /> : <SignUpPage />} />
       <Route path="/playlist/:id" element={<SharedPlaylist />} />
       <Route path="/play/:videoId" element={<PlayerPage />} />
     </Routes>

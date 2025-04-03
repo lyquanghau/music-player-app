@@ -3,20 +3,26 @@ import { useAuth } from "../AuthContext";
 import { Link } from "react-router-dom";
 import LeftSection from "./LeftSection"; // Thêm import cho LeftSection
 
-const LandingPage = () => {
-  const { login } = useAuth();
+const SignUpPage = () => {
+  const { signup } = useAuth();
   const [username, setUsername] = useState("");
+  // const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleLogin = async (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      alert("Mật khẩu và xác nhận mật khẩu không khớp!");
+      return;
+    }
     try {
-      await login(username, password);
+      await signup(username, password); // Gọi hàm signup
     } catch (error) {
-      console.error("Login failed:", error);
+      alert("Đăng ký thất bại. Vui lòng thử lại!");
+      console.error("Sign up failed:", error);
     }
   };
-
   return (
     <div
       style={{
@@ -167,7 +173,7 @@ const LandingPage = () => {
               marginTop: "10px",
             }}
           >
-            Đăng nhập
+            Đăng ký
           </h2>
           <p
             style={{
@@ -178,9 +184,9 @@ const LandingPage = () => {
               opacity: 0.8,
             }}
           >
-            Tham gia gia cùng chúng tôi để trải nghiệm âm nhạc đỉnh cao!
+            Tạo tài khoản để khám phá âm nhạc không giới hạn!
           </p>
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleSignUp}>
             <div style={{ position: "relative", margin: "16px 0" }}>
               <i
                 className="fas fa-user"
@@ -219,6 +225,44 @@ const LandingPage = () => {
                 }
               />
             </div>
+            {/* <div style={{ position: "relative", margin: "16px 0" }}>
+              <i
+                className="fas fa-envelope"
+                style={{
+                  position: "absolute",
+                  left: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#fff",
+                  opacity: 0.7,
+                }}
+              ></i>
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px 10px 10px 35px",
+                  borderRadius: "4px",
+                  border: "none",
+                  background: "rgba(255, 255, 255, 0.2)",
+                  color: "#fff",
+                  fontSize: "0.9rem",
+                  outline: "none",
+                  transition: "background 0.3s",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) =>
+                  (e.target.style.background = "rgba(255, 255, 255, 0.3)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.background = "rgba(255, 255, 255, 0.2)")
+                }
+              />
+            </div> */}
             <div style={{ position: "relative", margin: "16px 0" }}>
               <i
                 className="fas fa-lock"
@@ -257,17 +301,43 @@ const LandingPage = () => {
                 }
               />
             </div>
-            <div style={{ textAlign: "center", margin: "24px 0" }}>
-              <a
-                href="/reset-password"
+            <div style={{ position: "relative", margin: "16px 0" }}>
+              <i
+                className="fas fa-lock"
                 style={{
+                  position: "absolute",
+                  left: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#fff",
+                  opacity: 0.7,
+                }}
+              ></i>
+              <input
+                type="password"
+                placeholder="Xác nhận mật khẩu"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  padding: "10px 10px 10px 35px",
+                  borderRadius: "4px",
+                  border: "none",
+                  background: "rgba(255, 255, 255, 0.2)",
                   color: "#fff",
                   fontSize: "0.9rem",
-                  textDecoration: "underline",
+                  outline: "none",
+                  transition: "background 0.3s",
+                  boxSizing: "border-box",
                 }}
-              >
-                Quên mật khẩu?
-              </a>
+                onFocus={(e) =>
+                  (e.target.style.background = "rgba(255, 255, 255, 0.3)")
+                }
+                onBlur={(e) =>
+                  (e.target.style.background = "rgba(255, 255, 255, 0.2)")
+                }
+              />
             </div>
             <button
               type="submit"
@@ -286,22 +356,22 @@ const LandingPage = () => {
               onMouseOver={(e) => (e.target.style.background = "#4682b4")}
               onMouseOut={(e) => (e.target.style.background = "#1e90ff")}
             >
-              Đăng nhập
+              Đăng ký
             </button>
           </form>
           <div style={{ textAlign: "center", margin: "24px 0" }}>
             <p style={{ color: "#fff", fontSize: "0.9rem" }}>
-              Chưa có tài khoản?{" "}
+              Đã có tài khoản?{" "}
               <Link
-                to="/signup"
+                to="/"
                 style={{ color: "#1e90ff", textDecoration: "underline" }}
               >
-                Đăng ký ngay
+                Đăng nhập ngay
               </Link>
             </p>
           </div>
 
-          {/* Nút đăng nhập bằng Google và Facebook */}
+          {/* Nút đăng ký bằng Google và Facebook */}
           <div
             style={{ display: "flex", gap: "10px", justifyContent: "center" }}
           >
@@ -312,13 +382,13 @@ const LandingPage = () => {
                 padding: "8px 15px",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "0.85rem", // Thêm fontSize để giảm kích thước chữ
+                fontSize: "0.85rem",
               }}
               onClick={() => {
-                console.log("Google login clicked");
+                console.log("Google sign up clicked");
               }}
             >
-              <i className="fab fa-google"></i> Login with Google
+              <i className="fab fa-google"></i> Sign up with Google
             </button>
             <button
               style={{
@@ -327,13 +397,13 @@ const LandingPage = () => {
                 padding: "8px 15px",
                 borderRadius: "5px",
                 cursor: "pointer",
-                fontSize: "0.85rem", // Thêm fontSize để giảm kích thước chữ
+                fontSize: "0.85rem",
               }}
               onClick={() => {
-                console.log("Facebook login clicked");
+                console.log("Facebook sign up clicked");
               }}
             >
-              <i className="fab fa-facebook"></i> Login with Facebook
+              <i className="fab fa-facebook"></i> Sign up with Facebook
             </button>
           </div>
           <div
@@ -350,7 +420,7 @@ const LandingPage = () => {
           <div
             style={{
               textAlign: "center",
-              marginTop: "5px", // Khoảng cách nhỏ giữa hai dòng chữ
+              marginTop: "5px",
               color: "rgba(255, 255, 255, 0.5)",
               fontSize: "0.65rem",
               lineHeight: "1.2",
@@ -734,4 +804,4 @@ const LandingPage = () => {
   );
 };
 
-export default LandingPage;
+export default SignUpPage;
