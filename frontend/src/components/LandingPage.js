@@ -16,7 +16,7 @@ const LandingPage = () => {
     try {
       await login(username, password);
       console.log("Login successful");
-      navigate("/"); // Điều hướng về MainApp sau khi đăng nhập thành công
+      navigate("/player"); // Điều hướng về MainApp sau khi đăng nhập thành công
     } catch (error) {
       console.error("Login error:", error);
       alert("Đăng nhập thất bại! Kiểm tra thông tin đăng nhập.");
@@ -197,7 +197,7 @@ const LandingPage = () => {
             <p style={{ color: "#fff", fontSize: "0.9rem" }}>
               Chưa có tài khoản?{" "}
               <Link
-                to="/signup"
+                to="/register"
                 style={{ color: "#1e90ff", textDecoration: "underline" }}
               >
                 Đăng ký ngay

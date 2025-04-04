@@ -6,6 +6,7 @@ import Player from "./components/Player";
 import CustomPlaylists from "./components/CustomPlaylists";
 import Recommendations from "./components/Recommendations";
 import { usePlaylist } from "./PlaylistContext";
+import LogoutButton from "./components/LogoutButton";
 import "./App.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
@@ -290,6 +291,9 @@ const MainApp = () => {
           />
         </div>
         <div className="search-container">
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <LogoutButton />
+          </div>
           <Search
             onSelectVideo={handleSelectVideo}
             setVideoList={setVideoList}

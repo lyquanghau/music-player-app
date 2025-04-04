@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react"; // Thêm useCallback
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import { MdDeleteForever, MdOutlinePlaylistAdd } from "react-icons/md";
@@ -22,6 +23,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [dataSource, setDataSource] = useState("");
+  const navigate = useNavigate();
 
   // Định nghĩa handleSearch với useCallback
   const handleSearch = useCallback(async () => {
@@ -320,10 +322,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
                 />
                 <div style={{ flex: 1 }}>
                   <div
-                    onClick={() => {
-                      console.log("Clicked video:", { id: item.id, index });
-                      onSelectVideo(item.id, index);
-                    }}
+                    onClick={() => navigate(`/play/${item.id}`)} // Chuyển đến PlayerPage
                     style={{ cursor: "pointer" }}
                   >
                     <div style={{ fontWeight: "bold", color: "#333" }}>

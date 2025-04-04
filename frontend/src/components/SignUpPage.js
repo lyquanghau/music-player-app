@@ -1,5 +1,4 @@
-// src/SignUpPage.js
-import React, { useState, useEffect } from "react"; // Thêm useEffect
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import LeftSection from "./LeftSection";
@@ -7,43 +6,43 @@ import Effects from "./particles/effect";
 import SocialIcons from "./particles/SocialIcons";
 
 const SignUpPage = () => {
-  const { signup } = useAuth();
+  const { signup, login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState(""); // Thông báo
-  const [showNotification, setShowNotification] = useState(false); // Kiểm soát hiển thị thanh trượt
+  const [message, setMessage] = useState("");
+  const [showNotification, setShowNotification] = useState(false);
   const navigate = useNavigate();
 
-  // Hiển thị thanh trượt khi có thông báo
+  // Hiệu ứng hiển thị thông báo
   useEffect(() => {
     if (message) {
-      setShowNotification(true); // Hiển thị thanh trượt
+      setShowNotification(true);
       const timer = setTimeout(() => {
-        setShowNotification(false); // Ẩn sau 3 giây
-        setMessage(""); // Xóa thông báo
-      }, 3000);
-      return () => clearTimeout(timer); // Dọn dẹp timer
+        setShowNotification(false);
+        setMessage("");
+      }, 3000); // Ẩn sau 3 giây
+      return () => clearTimeout(timer);
     }
   }, [message]);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      setMessage("Mật khẩu và xác nhận mật khẩu không khớp!");
+      setMessage("Mật khẩu không khớp!");
       return;
     }
     try {
-      const response = await signup(username, password);
-      setMessage(response.message || "Đăng ký thành công!");
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-    } catch (error) {
+      await signup(username, password);
+      await login(username, password); // Tự động đăng nhập
       setMessage(
-        error.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại!"
+        "Đăng ký thành công! Bạn sẽ được chuyển đến trang chính trong giây lát."
       );
-      console.error("Sign up failed:", error);
+      setTimeout(() => {
+        navigate("/player");
+      }, 2000); // Chuyển hướng sau 2 giây
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Đăng ký thất bại!");
     }
   };
 
@@ -59,7 +58,6 @@ const SignUpPage = () => {
       }}
     >
       <SocialIcons />
-
       <LeftSection />
 
       {/* Thanh trượt thông báo */}
@@ -68,14 +66,14 @@ const SignUpPage = () => {
           style={{
             position: "fixed",
             top: "20px",
-            right: showNotification ? "20px" : "-300px", // Trượt từ phải vào
-            background: message.includes("thành công") ? "#87CEEB" : "#ff6b6b",
+            right: showNotification ? "20px" : "-300px",
+            background: message.includes("thành công") ? "#28a745" : "#ff6b6b",
             color: "#fff",
             padding: "10px 20px",
             borderRadius: "5px",
             boxShadow: "0 2px 10px rgba(0, 0, 0, 0.2)",
             zIndex: 1000,
-            transition: "right 0.5s ease-in-out", // Hiệu ứng trượt
+            transition: "right 0.5s ease-in-out",
             maxWidth: "300px",
             fontSize: "0.9rem",
           }}

@@ -1,27 +1,27 @@
-// src/App.js
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import MainApp from "./MainApp";
+import MainApp from "./MainApp"; // Trang nghe nhạc chính
 import SharedPlaylist from "./components/SharedPlaylist";
 import LandingPage from "./components/LandingPage";
 import SignUpPage from "./components/SignUpPage";
-import PlayerPage from "./components/PlayerPage";
-import Player from "./components/Player";
+import PlayerPage from "./components/PlayerPage"; // Thêm PlayerPage
 import { AuthProvider, useAuth } from "./AuthContext";
-import { PlaylistProvider } from "./PlaylistContext"; // Thêm PlaylistProvider
+import { PlaylistProvider } from "./PlaylistContext";
 
-// Tách logic kiểm tra user vào một component riêng
 const AppRoutes = () => {
   const { user } = useAuth();
-  console.log("AppRoutes - Current user:", user); // Debug trạng thái user
 
   return (
     <Routes>
-      <Route path="/" element={user ? <MainApp /> : <LandingPage />} />
-      <Route path="/signup" element={user ? <MainApp /> : <SignUpPage />} />
-      <Route path="/player" element={user ? <MainApp /> : <Player />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/register" element={<SignUpPage />} />
+      <Route path="/player" element={user ? <MainApp /> : <LandingPage />} />
+      <Route
+        path="/play/:videoId"
+        element={user ? <PlayerPage /> : <LandingPage />}
+      />{" "}
+      {/* Thêm route */}
       <Route path="/playlist/:id" element={<SharedPlaylist />} />
-      <Route path="/play/:videoId" element={<PlayerPage />} />
     </Routes>
   );
 };
@@ -30,8 +30,6 @@ function App() {
   return (
     <AuthProvider>
       <PlaylistProvider>
-        {" "}
-        {/* Thêm PlaylistProvider */}
         <Router>
           <AppRoutes />
         </Router>

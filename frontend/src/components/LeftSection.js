@@ -74,6 +74,7 @@ const LeftSection = () => {
           gap: "12px",
           flexWrap: "wrap",
           justifyContent: "center",
+          cursor: "default",
         }}
       >
         <div
