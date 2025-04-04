@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
-import logo from "../assets/logo.png"; // Sao chép từ LandingPage
+import logo from "../assets/logo.png";
 
 const LeftSection = () => {
-  // Sao chép trạng thái từ LandingPage
   const [listenCount, setListenCount] = useState(0);
   const [isLogoLoaded, setIsLogoLoaded] = useState(false);
 
-  // Sao chép useEffect từ LandingPage
   useEffect(() => {
     const targetCount = 1000000;
     const duration = 2000;
@@ -25,7 +23,6 @@ const LeftSection = () => {
     return () => clearInterval(counter);
   }, []);
 
-  // Sao chép phần giao diện bên trái từ LandingPage
   return (
     <div
       style={{
@@ -231,6 +228,63 @@ const LeftSection = () => {
       >
         Khám phá ngay
       </button>
+
+      {/* Thêm CSS cho hiệu ứng sóng âm và scalePulse */}
+      <style>
+        {`
+          .soundwave-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 100%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            opacity: 1;
+          }
+
+          .soundwave-effect::before,
+          .soundwave-effect::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 120%;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: wave 1.5s infinite;
+          }
+
+          .soundwave-effect::after {
+            animation-delay: 0.5s;
+          }
+
+          @keyframes wave {
+            0% {
+              transform: translate(-50%, -50%) scale(0.8);
+              opacity: 0.5;
+            }
+            100% {
+              transform: translate(-50%, -50%) scale(1.2);
+              opacity: 0;
+            }
+          }
+
+          @keyframes scalePulse {
+            0% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.1);
+            }
+            100% {
+              transform: scale(1);
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };

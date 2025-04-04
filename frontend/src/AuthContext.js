@@ -1,7 +1,7 @@
 // src/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode"; // Thêm jwt-decode để giải mã token
+import { jwtDecode } from "jwt-decode";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
@@ -16,19 +16,39 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        // Kiểm tra token có hết hạn không
-        const currentTime = Date.now() / 1000; // Thời gian hiện tại (giây)
+        const currentTime = Date.now() / 1000;
+        const testExpiryTime = decoded.iat + 300; // iat = thời điểm token được tạo
+
         if (decoded.exp < currentTime) {
-          localStorage.removeItem("token"); // Xóa token nếu hết hạn
+          localStorage.removeItem("token");
+          setUser(null);
         } else {
-          setUser({ id: decoded.id }); // Cập nhật user từ token
+          setUser({ id: decoded.id });
+
+          // Tự động logout sau 30s (tuỳ chọn)
+          const timeLeft = (testExpiryTime - currentTime) * 1000;
+          setTimeout(logout, timeLeft);
         }
       } catch (error) {
         console.error("Invalid token:", error);
         localStorage.removeItem("token");
+        setUser(null);
       }
     }
   }, []);
+
+  const signup = async (username, password) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/auth/register`, {
+        username,
+        password,
+      });
+      return response.data; // Trả về dữ liệu từ server (message, user)
+    } catch (error) {
+      console.error("Signup failed:", error.response?.data || error.message);
+      throw error;
+    }
+  };
 
   const login = async (username, password) => {
     try {
@@ -36,12 +56,18 @@ export const AuthProvider = ({ children }) => {
         username,
         password,
       });
-      const token = response.data.token;
+      const { token } = response.data;
+      if (!token) throw new Error("No token received from server");
       localStorage.setItem("token", token);
       const decoded = jwtDecode(token);
-      setUser({ id: decoded.id, username });
+      const userData = {
+        id: decoded.id,
+        username: decoded.username || username,
+      };
+      setUser(userData);
+      return userData;
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("Login failed:", error.response?.data || error.message);
       throw error;
     }
   };
@@ -52,7 +78,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, signup, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

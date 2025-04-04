@@ -1,38 +1,38 @@
-require("dotenv").config();
+// index.js
+require("dotenv").config(); // Chỉ gọi một lần
 const express = require("express");
 const connectDB = require("./db.js");
 const cors = require("cors");
-require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 8404; // Thêm giá trị mặc định nếu PORT không được định nghĩa
 
+// Middleware
 app.use(express.json());
-
 app.use(
   cors({
-    origin: "http://localhost:6704",
+    origin: "http://localhost:6704", // Đổi thành port của frontend React
     credentials: true,
-    methods: ["GET", "POST", "DELETE", "OPTIONS"], // Thêm DELETE vào methods
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type"],
   })
 );
-
 app.options("*", cors());
 connectDB();
-
+// Routes
 app.get("/", (req, res) => {
   res.send("Welcome to Music Player Backend - YouTube Version");
 });
 
 const apiRoutes = require("./routes/api");
-const publicRoutes = require("./routes/public"); // Thêm route công khai
+const publicRoutes = require("./routes/public");
 const authRoutes = require("./routes/auth");
 
-app.use("/api", apiRoutes); // Các route API có tiền tố /api
-app.use("/", publicRoutes); // Route công khai không có tiền tố
-app.use("/api/auth", authRoutes); //
+app.use("/api", apiRoutes);
+app.use("/", publicRoutes);
+app.use("/api/auth", authRoutes);
 
+// Xử lý lỗi chung
 function handleError(error, res) {
   if (error.response) {
     console.log("Lỗi từ YouTube:", error.response.data);
@@ -43,6 +43,7 @@ function handleError(error, res) {
   }
 }
 
+// Khởi động server
 app.listen(port, () => {
   console.log(`Server chạy trên http://localhost:${port}`);
 });

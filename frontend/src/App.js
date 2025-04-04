@@ -6,17 +6,20 @@ import SharedPlaylist from "./components/SharedPlaylist";
 import LandingPage from "./components/LandingPage";
 import SignUpPage from "./components/SignUpPage";
 import PlayerPage from "./components/PlayerPage";
+import Player from "./components/Player";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { PlaylistProvider } from "./PlaylistContext"; // Thêm PlaylistProvider
 
 // Tách logic kiểm tra user vào một component riêng
 const AppRoutes = () => {
   const { user } = useAuth();
+  console.log("AppRoutes - Current user:", user); // Debug trạng thái user
 
   return (
     <Routes>
       <Route path="/" element={user ? <MainApp /> : <LandingPage />} />
       <Route path="/signup" element={user ? <MainApp /> : <SignUpPage />} />
+      <Route path="/player" element={user ? <MainApp /> : <Player />} />
       <Route path="/playlist/:id" element={<SharedPlaylist />} />
       <Route path="/play/:videoId" element={<PlayerPage />} />
     </Routes>
