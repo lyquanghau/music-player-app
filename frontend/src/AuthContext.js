@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const decoded = jwtDecode(token);
         const currentTime = Date.now() / 1000;
-        const testExpiryTime = decoded.iat + 300; // iat = thời điểm token được tạo
+        const testExpiryTime = decoded.iat + 1000; // iat = thời điểm token được tạo
 
         if (decoded.exp < currentTime) {
           localStorage.removeItem("token");

@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import MainApp from "./MainApp"; // Trang nghe nhạc chính
+// import MainApp from "./MainApp"; // Trang nghe nhạc chính
+import HomePage from "./components/HomePage";
 import SharedPlaylist from "./components/SharedPlaylist";
 import LandingPage from "./components/LandingPage";
 import SignUpPage from "./components/SignUpPage";
@@ -13,9 +14,13 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<LandingPage />} /> {/* Trang đăng nhập */}
       <Route path="/register" element={<SignUpPage />} />
-      <Route path="/player" element={user ? <MainApp /> : <LandingPage />} />
+      <Route
+        path="/home"
+        element={user ? <HomePage /> : <LandingPage />}
+      />{" "}
+      {/* Sau đăng nhập vào HomePage */}
       <Route
         path="/play/:videoId"
         element={user ? <PlayerPage /> : <LandingPage />}
