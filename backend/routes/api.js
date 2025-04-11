@@ -74,6 +74,7 @@ router.get("/search", checkApiKey, async (req, res) => {
 });
 
 // Endpoint để lưu lịch sử tìm kiếm
+// Trong router.js
 router.post("/history", async (req, res) => {
   const { query } = req.body;
   if (!query || query.trim() === "") {
@@ -81,17 +82,15 @@ router.post("/history", async (req, res) => {
   }
 
   try {
-    // Kiểm tra xem query đã tồn tại chưa
-    let existingHistory = await SearchHistory.findOne({ query });
-    if (existingHistory) {
-      // Cập nhật timestamp nếu query đã tồn tại
-      existingHistory.timestamp = new Date();
-      await existingHistory.save();
-    } else {
-      // Tạo mới nếu chưa tồn tại
-      const newHistory = new SearchHistory({ query, timestamp: new Date() });
-      await newHistory.save();
-    }
+    // Xóa các mục trùng lặp trước khi lưu
+    await SearchHistory.deleteMany({ query: query.toLowerCase() });
+
+    // Tạo mới mục lịch sử
+    const newHistory = new SearchHistory({
+      query: query.toLowerCase(),
+      timestamp: new Date(),
+    });
+    await newHistory.save();
     res.status(200).json({ message: "Đã lưu lịch sử tìm kiếm" });
   } catch (error) {
     console.error("Lỗi khi lưu lịch sử tìm kiếm:", error.message);

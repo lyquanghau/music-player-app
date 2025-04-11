@@ -1,0 +1,127 @@
+/* src/assets/css/Search.css */
+
+/* Search Container */
+.search-container {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff; /* Nền trắng */
+  border-radius: 20px; /* Bo góc lớn */
+  padding: 6px 10px; /* Padding hợp lý */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+  width: 180px; /* Chiều rộng ban đầu nhỏ hơn */
+  margin: 0 auto;
+  transition: width 0.4s ease; /* Hiệu ứng mở rộng */
+}
+
+/* Mở rộng ô tìm kiếm khi focus */
+.search-container:focus-within {
+  width: 270px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: none; /* Không có nền */
+  font-size: 14px; /* Kích thước chữ phù hợp */
+  color: #333;
+  padding-left: 15px; /* Thêm padding-left để placeholder không sát mép trái */
+  padding-right: 10px; /* Đảm bảo có khoảng cách bên phải */
+  line-height: 30px; /* Căn giữa theo chiều dọc */
+  transition: 0.4s; /* Hiệu ứng chuyển đổi */
+}
+
+.search-input::placeholder {
+  color: #999; /* Màu placeholder xám nhạt */
+  font-size: 14px;
+}
+
+.search-icon {
+  font-size: 16px;
+  color: #3b82f6; /* Màu xanh của Sky Music */
+  cursor: pointer;
+  transition: color 0.4s; /* Hiệu ứng chuyển đổi màu */
+  padding-right: 24px;
+}
+
+/* Thêm hiệu ứng hover cho biểu tượng kính lúp */
+.search-icon:hover {
+  color: #2563eb; /* Đổi màu thành xanh đậm khi hover */
+}
+
+/* Xóa style của search-btn vì không còn sử dụng */
+.search-btn {
+  display: none; /* Ẩn style này vì không còn nút "Tìm" */
+}
+
+/* History Container */
+.history-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  z-index: 1000;
+  max-width: 500px;
+  margin: 5px auto 0;
+}
+
+.history-container h3 {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.history-container .clear-history-btn {
+  background-color: #ff4444; /* Màu đỏ */
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s;
+}
+
+.history-container .clear-history-btn:hover {
+  background-color: #cc0000; /* Đậm hơn khi hover */
+}
+
+.history-container .history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.history-container .history-item:hover {
+  background-color: #e0f2fe; /* Màu xanh nhạt khi hover */
+}
+
+.history-container .history-item span {
+  font-size: 14px;
+  color: #333;
+}
+
+.history-container .history-item .remove-btn {
+  background-color: transparent;
+  border: none;
+  color: #ff4444;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.history-container .no-history {
+  font-size: 14px;
+  color: #666;
+  text-align: center;
+}

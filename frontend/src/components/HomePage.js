@@ -4,11 +4,12 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Search from "./Search";
 import CustomPlaylists from "./CustomPlaylists";
-import Recommendations from "./Recommendations";
+// import Recommendations from "./Recommendations";
 import { usePlaylist } from "../PlaylistContext";
-// import LogoutButton from "./LogoutButton";
+import LogoutButton from "./LogoutButton";
 import "../assets/css/HomePage.css";
 
+import logo from "../assets/logo.png";
 import Slider1 from "../assets/Sliders/Sliders_1.png";
 import Slider2 from "../assets/Sliders/Sliders_2.png";
 import Slider3 from "../assets/Sliders/Sliders_3.png";
@@ -152,11 +153,16 @@ const HomePage = () => {
         <div className="header-top">
           <div className="logo">
             <a href="/home">
-              <span className="logo-icon">🎵</span>{" "}
-              {/* Thay thế bằng biểu tượng âm nhạc đơn giản */}
-              <span className="logo-text">Sky Music</span>
+              <img src={logo} alt="Sky MusicMusic" />
             </a>
           </div>
+          <nav className="nav-main">
+            <a href="/genres">Thể loại</a>
+            <a href="/trending">Thịnh hành</a>
+            <a href="/playlists">Danh sách phát</a>
+            <a href="/music-videos">Video âm nhạc</a>
+            <a href="/channels">Kênh</a>
+          </nav>
           <div className="search-bar">
             <Search
               onSelectVideo={handleSelectVideo}
@@ -165,76 +171,115 @@ const HomePage = () => {
             />
           </div>
           <div className="auth-buttons">
-            <button className="login-btn" onClick={() => navigate("/login")}>
-              Đăng nhập
-            </button>
-            <button
-              className="signup-btn"
-              onClick={() => navigate("/register")}
-            >
-              Đăng ký
-            </button>
+            <LogoutButton />
           </div>
-        </div>
-        <div className="header-menu">
-          <nav className="nav-main">
-            <a href="/music_theme">Chủ đề</a>
-            <a href="/top_song">BXH</a>
-            <a href="/album">Album</a>
-            <a href="/music_video">Music Video</a>
-            <a href="/artist">Nghệ sĩ</a>
-            <a href="/vip" className="vip-link">
-              <span className="crown-icon">👑</span> VIP
-            </a>
-          </nav>
         </div>
       </header>
 
-      <div id="Slider">
-        <div className="slider-container">
-          <div className="slider-wrapper">
-            <div
-              className="slider-list"
-              style={{ transform: `translateX(${-500 * sliderIndex}px)` }}
-            >
-              {sliderImages.map((img, index) => (
-                <img
-                  key={index}
-                  src={img}
-                  className="slider-list-img"
-                  alt={`slider ${index + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="arrow">
-            <div className="arrow-left" onClick={handlePrevSlide}>
-              &lt;
-            </div>
-            <div className="arrow-right" onClick={handleNextSlide}>
-              &gt;
-            </div>
-          </div>
-          <div className="navigation-dots">
-            {sliderImages.map((_, index) => (
-              <span
-                key={index}
-                className={`dot dot-${index} ${
-                  sliderIndex === index ? "active" : ""
-                }`}
-                onClick={() => setSliderIndex(index)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
       <div id="Content" className="main-content">
         <div className="left-column">
-          <Recommendations
-            currentVideoId={selectedVideoId}
-            onSelectVideo={handleSelectVideo}
-          />
+          {videoList.length > 0 ? (
+            <>
+              <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
+                Kết quả tìm kiếm
+              </h3>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: "0",
+                  maxHeight: "400px",
+                  overflowY: "auto",
+                }}
+              >
+                {videoList.map((item, index) => (
+                  <li
+                    key={item.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px",
+                      borderBottom: "1px solid #eee",
+                      backgroundColor: "#f9f9f9",
+                      transition: "background-color 0.2s",
+                    }}
+                  >
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      style={{ width: "50px", borderRadius: "4px" }}
+                      loading="lazy"
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div
+                        onClick={() => handleSelectVideo(item.id, index)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div style={{ fontWeight: "bold", color: "#333" }}>
+                          {item.title}
+                        </div>
+                        <div style={{ color: "#666", fontSize: "14px" }}>
+                          {item.channel}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleOpenPlaylistModal(item.id)}
+                      style={{
+                        padding: "5px 10px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <div id="Slider">
+              <div className="slider-container">
+                <div className="slider-wrapper">
+                  <div
+                    className="slider-list"
+                    style={{ transform: `translateX(${-500 * sliderIndex}px)` }}
+                  >
+                    {sliderImages.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        className="slider-list-img"
+                        alt={`slider ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="arrow">
+                  <div className="arrow-left" onClick={handlePrevSlide}>
+                    &lt;
+                  </div>
+                  <div className="arrow-right" onClick={handleNextSlide}>
+                    &gt;
+                  </div>
+                </div>
+                <div className="navigation-dots">
+                  {sliderImages.map((_, index) => (
+                    <span
+                      key={index}
+                      className={`dot dot-${index} ${
+                        sliderIndex === index ? "active" : ""
+                      }`}
+                      onClick={() => setSliderIndex(index)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div className="right-column">
           <CustomPlaylists

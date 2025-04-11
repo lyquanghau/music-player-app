@@ -14,19 +14,21 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} /> {/* Trang đăng nhập */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/register" element={<SignUpPage />} />
       <Route
         path="/home"
         element={user ? <HomePage /> : <LandingPage />}
       />{" "}
-      {/* Sau đăng nhập vào HomePage */}
       <Route
         path="/play/:videoId"
         element={user ? <PlayerPage /> : <LandingPage />}
       />{" "}
-      {/* Thêm route */}
-      <Route path="/playlist/:id" element={<SharedPlaylist />} />
+      {/* <Route path="/playlist/:id" element={<SharedPlaylist />} />
+      <Route path="/genres" element={<Genres />} />
+      <Route path="/trending" element={<Trending />} />
+      <Route path="/music-videos" element={<MusicVideos />} />
+      <Route path="/channels" element={<Channels />} /> */}
     </Routes>
   );
 };

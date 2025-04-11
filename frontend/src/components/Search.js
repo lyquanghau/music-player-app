@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import "../assets/css/Search.css"; // Import file CSS mới
+import { IoSearch } from "react-icons/io5";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
@@ -15,10 +17,8 @@ const debounce = (func, delay) => {
 
 const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
-  const [dataSource, setDataSource] = useState("");
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const navigate = useNavigate();
 
@@ -33,64 +33,30 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
       try {
         const { videos, timestamp } = JSON.parse(cachedResults);
         if (Date.now() - timestamp < 600000) {
-          console.log("Lấy từ cache:", videos);
-          setSearchResults(videos);
           setVideoList(videos);
-          setDataSource("localStorage");
           return;
         }
       } catch (e) {
-        console.error("Dữ liệu localStorage không hợp lệ:", e);
         localStorage.removeItem(`search_${query}`);
       }
     }
 
     setErrorMessage("");
     try {
-      console.log("Gọi API:", `${API_URL}/api/search?q=${query}`);
       const response = await axios.get(`${API_URL}/api/search`, {
         params: { q: query },
       });
       const videos = response.data.items;
-      console.log("Search results:", videos);
-
-      if (!Array.isArray(videos)) {
-        throw new Error("Dữ liệu trả về không phải là mảng!");
-      }
-      setSearchResults(videos);
       setVideoList(videos);
       localStorage.setItem(
         `search_${query}`,
         JSON.stringify({ videos, timestamp: Date.now() })
       );
-      setDataSource(
-        response.headers["x-cache"] === "hit" ? "backend cache" : "API"
-      );
 
-      try {
-        const historyResponse = await axios.post(
-          `${API_URL}/api/history`,
-          { query },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        console.log("Đã lưu lịch sử tìm kiếm:", query, historyResponse.data);
-        fetchHistory();
-      } catch (error) {
-        console.error(
-          "Lỗi khi lưu lịch sử tìm kiếm:",
-          error.message,
-          error.response?.data
-        );
-      }
+      await axios.post(`${API_URL}/api/history`, { query });
+      fetchHistory();
     } catch (error) {
-      console.error("Lỗi khi tìm kiếm:", error.message, error.response?.data);
-      setErrorMessage(
-        error.response?.data?.message || "Có lỗi xảy ra khi tìm kiếm!"
-      );
+      setErrorMessage(error.response?.data?.message || "Có lỗi khi tìm kiếm!");
     }
   }, [query, setVideoList]);
 
@@ -107,13 +73,8 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     try {
       const response = await axios.get(`${API_URL}/api/history`);
       setSearchHistory(response.data);
-      console.log("Lịch sử tìm kiếm:", response.data);
     } catch (error) {
-      console.error(
-        "Lỗi khi lấy lịch sử tìm kiếm:",
-        error.message,
-        error.response?.data
-      );
+      console.error("Lỗi khi lấy lịch sử tìm kiếm:", error);
     }
   };
 
@@ -152,14 +113,16 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     setIsHistoryVisible(false);
   };
 
+  // Lọc trùng lặp trong searchHistory
+  const uniqueSearchHistory = Array.from(
+    new Map(
+      searchHistory.map((item) => [item.query.toLowerCase(), item])
+    ).values()
+  );
+
   return (
-    <div
-      style={{
-        position: "relative",
-      }}
-    >
+    <div style={{ position: "relative" }}>
       <div className="search-container">
-        <span className="search-icon">🔍</span>
         <input
           type="text"
           value={query}
@@ -170,22 +133,26 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
           placeholder="Từ khóa tìm kiếm..."
           className="search-input"
         />
-        <button onClick={debouncedSearch} className="search-btn">
-          Tìm
-        </button>
+        <span className="search-icon" onClick={debouncedSearch}>
+          <IoSearch />
+        </span>
       </div>
 
       {errorMessage && (
-        <div style={{ color: "#dc3545", marginBottom: "10px" }}>
+        <div
+          style={{
+            color: "#dc3545",
+            marginBottom: "10px",
+            textAlign: "center",
+          }}
+        >
           {errorMessage}
         </div>
       )}
 
       {isHistoryVisible && (
         <div className="history-container">
-          <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
-            Lịch sử tìm kiếm
-          </h3>
+          <h3>Lịch sử tìm kiếm</h3>
           <div
             style={{
               display: "flex",
@@ -194,138 +161,30 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
             }}
           >
             <span></span>
-            <button
-              onClick={handleClearHistory}
-              style={{
-                padding: "4px 8px",
-                backgroundColor: "#dc3545",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
-            >
+            <button onClick={handleClearHistory} className="clear-history-btn">
               Xóa tất cả
             </button>
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "10px",
-              marginBottom: "20px",
-            }}
-          >
-            {searchHistory.length > 0 ? (
-              searchHistory.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "5px 10px",
-                    backgroundColor: "#fff",
-                    borderRadius: "4px",
-                  }}
-                >
-                  <span
-                    onClick={() => handleHistoryClick(item.query)}
-                    style={{ cursor: "pointer", marginRight: "5px" }}
-                  >
+          <div>
+            {uniqueSearchHistory.length > 0 ? (
+              uniqueSearchHistory.map((item, index) => (
+                <div key={index} className="history-item">
+                  <span onClick={() => handleHistoryClick(item.query)}>
                     {item.query}
                   </span>
                   <button
                     onClick={() => handleRemoveHistoryItem(index, item.query)}
-                    style={{
-                      backgroundColor: "transparent",
-                      cursor: "pointer",
-                      color: "#dc3545",
-                      fontSize: "16px",
-                    }}
+                    className="remove-btn"
                   >
                     X
                   </button>
                 </div>
               ))
             ) : (
-              <p style={{ color: "#666" }}>Chưa có lịch sử tìm kiếm</p>
+              <p className="no-history">Chưa có lịch sử tìm kiếm</p>
             )}
           </div>
         </div>
-      )}
-
-      {searchResults.length > 0 && (
-        <>
-          <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
-            Kết quả tìm kiếm
-          </h3>
-          <p style={{ color: "#666", marginBottom: "10px" }}>
-            Nguồn: {dataSource}
-          </p>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: "0",
-              maxHeight: "200px",
-              overflowY: "auto",
-            }}
-          >
-            {searchResults.map((item, index) => (
-              <li
-                key={item.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "10px",
-                  borderBottom: "1px solid #eee",
-                  backgroundColor: "#f9f9f9",
-                  transition: "background-color 0.2s",
-                }}
-              >
-                <img
-                  src={item.thumbnail}
-                  alt={item.title}
-                  style={{ width: "50px", borderRadius: "4px" }}
-                  loading="lazy"
-                />
-                <div style={{ flex: 1 }}>
-                  <div
-                    onClick={() => navigate(`/play/${item.id}`)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div style={{ fontWeight: "bold", color: "#333" }}>
-                      {item.title}
-                    </div>
-                    <div style={{ color: "#666", fontSize: "14px" }}>
-                      {item.channel}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => onAddToPlaylist(item.id)}
-                  style={{
-                    padding: "5px 10px",
-                    backgroundColor: "#28a745",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#218838")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#28a745")
-                  }
-                >
-                  +
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
       )}
     </div>
   );
