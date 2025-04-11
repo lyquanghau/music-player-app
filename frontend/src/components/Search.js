@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../assets/css/Search.css"; // Import file CSS mới
+import "../assets/css/Search.css";
 import { IoSearch } from "react-icons/io5";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
@@ -20,6 +20,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   const [searchHistory, setSearchHistory] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false); // Trạng thái hiển thị ô tìm kiếm
   const navigate = useNavigate();
 
   const handleSearch = useCallback(async () => {
@@ -113,6 +114,14 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
     setIsHistoryVisible(false);
   };
 
+  const toggleSearch = () => {
+    setIsSearchVisible(!isSearchVisible);
+    if (isSearchVisible) {
+      setIsHistoryVisible(false);
+      setQuery(""); // Reset query khi đóng ô tìm kiếm
+    }
+  };
+
   // Lọc trùng lặp trong searchHistory
   const uniqueSearchHistory = Array.from(
     new Map(
@@ -123,19 +132,23 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
   return (
     <div style={{ position: "relative" }}>
       <div className="search-container">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyPress={handleKeyPress}
-          onFocus={() => setIsHistoryVisible(true)}
-          onBlur={() => setTimeout(() => setIsHistoryVisible(false), 200)}
-          placeholder="Từ khóa tìm kiếm..."
-          className="search-input"
-        />
-        <span className="search-icon" onClick={debouncedSearch}>
+        <span className="search-icon" onClick={toggleSearch}>
           <IoSearch />
         </span>
+        <div
+          className={`search-input-wrapper ${isSearchVisible ? "visible" : ""}`}
+        >
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyPress={handleKeyPress}
+            onFocus={() => setIsHistoryVisible(true)}
+            onBlur={() => setTimeout(() => setIsHistoryVisible(false), 200)}
+            placeholder="Từ khóa tìm kiếm..."
+            className="search-input"
+          />
+        </div>
       </div>
 
       {errorMessage && (
@@ -150,7 +163,7 @@ const Search = ({ onSelectVideo, setVideoList, onAddToPlaylist }) => {
         </div>
       )}
 
-      {isHistoryVisible && (
+      {isHistoryVisible && isSearchVisible && (
         <div className="history-container">
           <h3>Lịch sử tìm kiếm</h3>
           <div

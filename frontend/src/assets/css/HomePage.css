@@ -1,7 +1,9 @@
 /* src/assets/css/HomePage.css */
 .home-page {
-  background-color: #a3cffa; /* Màu xanh nhạt của Sky Music */
+  background: linear-gradient(to bottom, #a3cffa 0%, #ffffff 100%);
   min-height: 100vh;
+  padding: 0;
+  margin: 0;
 }
 
 .home-page * {
@@ -33,12 +35,13 @@
 
 /* Header */
 .home-page #Header {
-  background: #3b82f6; /* Màu xanh dương tươi sáng */
+  background: transparent;
   width: 100%;
-  padding: 10px 0;
-  height: 60px; /* Đặt chiều cao cố định cho header */
-  display: flex; /* Đảm bảo header là flex container */
-  align-items: center; /* Căn giữa các thành phần theo chiều dọc */
+  padding: 15px 30px; /* Tăng padding ngang và dọc */
+  min-height: 80px; /* Đặt chiều cao tối thiểu */
+  display: flex;
+  align-items: center;
+  position: relative;
 }
 
 .home-page .header-top {
@@ -47,56 +50,62 @@
   justify-content: space-between;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
-  gap: 20px; /* Thêm khoảng cách giữa các thành phần */
-  width: 100%; /* Đảm bảo header-top chiếm toàn bộ chiều rộng */
+  padding: 0;
+  gap: 30px;
+  width: 100%;
 }
 
 .home-page .logo {
-  display: flex;
-  align-items: center;
-}
-
-.home-page .logo a {
-  display: block; /* Đảm bảo thẻ a không gây ra khoảng cách thừa */
-  line-height: 0; /* Loại bỏ khoảng cách do line-height */
+  margin-left: 20px;
 }
 
 .home-page .logo img {
-  height: 80px; /* Tăng chiều cao logo (có thể điều chỉnh) */
-  width: auto; /* Giữ tỷ lệ hình ảnh */
-  display: block; /* Loại bỏ khoảng cách dưới hình ảnh */
-}
-
-/* Xóa style không còn sử dụng */
-.home-page .logo-icon,
-.home-page .logo-text {
-  display: none; /* Ẩn style vì không còn sử dụng */
+  height: 70px; /* Giảm kích thước logo */
+  width: auto;
 }
 
 .home-page .nav-main {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 25px; /* Giảm khoảng cách giữa các mục menu */
+  justify-content: center;
+  gap: 30px; /* Giảm khoảng cách giữa các mục */
+  font-weight: bold;
+  /* max-width: 600px; */
 }
 
 .home-page .nav-main a {
-  color: #fff; /* Màu trắng */
+  color: #333;
   text-decoration: none;
-  font-size: 14px;
-  text-transform: uppercase;
-  transition: color 0.3s;
+  font-size: 16px;
+  text-transform: none;
+  transition: color 0.3s, border-bottom 0.3s;
+  position: relative; /* Để thêm hiệu ứng gạch chân */
 }
 
-.home-page .nav-main a:hover {
-  color: #2563eb; /* Màu xanh đậm khi hover */
+/* .home-page .nav-main a:hover {
+  color: #6f9af9;
+} */
+
+.home-page .nav-main a::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 1px;
+  background-color: #699ff6; /* Màu gạch chân */
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: width 0.3s ease;
+}
+
+.home-page .nav-main a:hover::after {
+  width: 100%; /* Hiệu ứng gạch chân khi hover */
 }
 
 .home-page .search-bar {
   display: flex;
   align-items: center;
-  justify-content: center; /* Đảm bảo ô tìm kiếm được căn giữa */
-  flex: 0 1 auto; /* Không cho phép ô tìm kiếm mở rộng quá mức */
 }
 
 .home-page .auth-buttons {
@@ -104,9 +113,48 @@
   gap: 10px;
 }
 
-/* Xóa phần header-menu vì không còn cần nữa */
-.home-page .header-menu {
-  display: none; /* Xóa style này vì không còn sử dụng */
+/* Logout Button */
+.auth-buttons .logout-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #3b82f6;
+  transition: color 0.3s, transform 0.3s;
+}
+
+.auth-buttons .logout-btn:hover {
+  color: #2563eb;
+  transform: scale(1.2); /* Phóng to nhẹ khi hover */
+}
+
+/* Hero Section */
+.hero-section {
+  padding: 20px 0;
+}
+
+.hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 20px;
+}
+
+.hero-text {
+  flex: 1;
+}
+
+.hero-text h1 {
+  font-size: 36px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.hero-text p {
+  font-size: 18px;
+  color: #666;
 }
 
 /* Slider */
@@ -114,24 +162,36 @@
   max-width: 500px;
   border-radius: 10px;
   position: relative;
-  margin: 20px auto; /* Giữ margin để tách biệt */
+  margin: 20px 0;
   background-color: #ffffff;
+  flex: 1;
 }
 
 .slider-wrapper {
   position: relative;
   overflow: hidden;
+  height: 300px;
 }
 
 .slider-list {
-  display: flex;
-  transition: transform 0.5s;
+  position: relative;
+  height: 100%;
 }
 
 .slider-list-img {
-  width: 500px;
-  height: auto;
+  width: 100%;
+  height: 100%;
   border-radius: 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  object-fit: cover;
+}
+
+.slider-list-img.active {
+  opacity: 1;
 }
 
 .arrow {
@@ -173,35 +233,34 @@
   height: 12px;
   width: 12px;
   margin: 0 5px;
-  background-color: #a3cffa; /* Màu xanh nhạt khi không active */
+  background-color: #a3cffa;
   border-radius: 50%;
   display: inline-block;
   cursor: pointer;
 }
 
 .dot.active {
-  background-color: #2563eb; /* Màu xanh đậm khi active */
+  background-color: #2563eb;
 }
 
 /* Main Content */
 .main-content {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
   display: flex;
   gap: 20px;
-  background-color: #ffffff; /* Nền trắng cho nội dung chính */
-  border-radius: 10px;
+  background: transparent;
 }
 
 .main-content .left-column {
   flex: 2;
-  position: relative; /* Đảm bảo slider và danh sách hiển thị đúng */
+  position: relative;
 }
 
 .main-content .left-column ul {
-  max-height: 400px; /* Giới hạn chiều cao danh sách kết quả */
-  overflow-y: auto; /* Thêm thanh cuộn nếu cần */
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .right-column {
@@ -227,7 +286,7 @@
   border-radius: 8px;
   text-align: center;
   width: 300px;
-  border: 2px solid #3b82f6; /* Viền xanh */
+  border: 2px solid #3b82f6;
 }
 
 .modal-content ul {
@@ -237,17 +296,17 @@
 
 .modal-content li {
   padding: 10px;
-  border-bottom: 1px solid #a3cffa; /* Viền màu xanh nhạt */
+  border-bottom: 1px solid #a3cffa;
   cursor: pointer;
 }
 
 .modal-content li:hover {
-  background-color: #e0f2fe; /* Màu xanh rất nhạt khi hover */
+  background-color: #e0f2fe;
 }
 
 .modal-content button {
   padding: 5px 10px;
-  background-color: #3b82f6; /* Màu xanh cho nút */
+  background-color: #3b82f6;
   color: white;
   border: none;
   border-radius: 4px;
@@ -256,22 +315,7 @@
 }
 
 .modal-content button:hover {
-  background-color: #2563eb; /* Đậm hơn khi hover */
-}
-
-/* Logout Button */
-.auth-buttons .logout-btn {
-  padding: 8px 16px;
-  background-color: #ff4444; /* Giữ màu đỏ nhạt */
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.auth-buttons .logout-btn:hover {
-  background-color: #cc0000; /* Đậm hơn khi hover */
+  background-color: #2563eb;
 }
 
 /* Notification */
@@ -287,12 +331,12 @@
 }
 
 .notification.success {
-  background-color: #3b82f6; /* Màu xanh cho thông báo thành công */
+  background-color: #3b82f6;
   color: white;
 }
 
 .notification.error {
-  background-color: #ff4444; /* Màu đỏ cho thông báo lỗi */
+  background-color: #ff4444;
   color: white;
 }
 
@@ -313,5 +357,58 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+/* Media Queries for Mobile */
+@media (max-width: 768px) {
+  .home-page .header-top {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .home-page .nav-main {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px; /* Giảm khoảng cách trên mobile */
+    max-width: 100%;
+  }
+
+  .home-page .nav-main a {
+    font-size: 14px; /* Giảm kích thước chữ trên mobile */
+  }
+
+  .home-page .search-bar {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .home-page .main-content {
+    flex-direction: column;
+  }
+
+  .hero-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-text h1 {
+    font-size: 24px;
+  }
+
+  .hero-text p {
+    font-size: 16px;
+  }
+
+  .slider-container {
+    max-width: 100%;
+  }
+
+  .slider-list-img {
+    width: 100%;
+  }
+
+  .hero-illustration img {
+    max-width: 100%;
   }
 }

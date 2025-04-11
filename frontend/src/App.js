@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 // import MainApp from "./MainApp"; // Trang nghe nhạc chính
 import HomePage from "./components/HomePage";
-import SharedPlaylist from "./components/SharedPlaylist";
+// import SharedPlaylist from "./components/SharedPlaylist";
 import LandingPage from "./components/LandingPage";
 import SignUpPage from "./components/SignUpPage";
 import PlayerPage from "./components/PlayerPage"; // Thêm PlayerPage

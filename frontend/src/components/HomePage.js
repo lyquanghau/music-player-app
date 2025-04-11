@@ -4,9 +4,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Search from "./Search";
 import CustomPlaylists from "./CustomPlaylists";
-// import Recommendations from "./Recommendations";
 import { usePlaylist } from "../PlaylistContext";
-import LogoutButton from "./LogoutButton";
+import { IoArrowForward } from "react-icons/io5"; // Biểu tượng mũi tên
 import "../assets/css/HomePage.css";
 
 import logo from "../assets/logo.png";
@@ -147,13 +146,19 @@ const HomePage = () => {
     }
   };
 
+  const handleLogout = () => {
+    // Logic đăng xuất (giả định)
+    localStorage.removeItem("token"); // Xóa token hoặc dữ liệu đăng nhập
+    navigate("/"); // Chuyển hướng về trang đăng nhập
+  };
+
   return (
     <div className="home-page">
       <header id="Header">
         <div className="header-top">
           <div className="logo">
             <a href="/home">
-              <img src={logo} alt="Sky MusicMusic" />
+              <img src={logo} alt="Sky Music" />
             </a>
           </div>
           <nav className="nav-main">
@@ -171,7 +176,9 @@ const HomePage = () => {
             />
           </div>
           <div className="auth-buttons">
-            <LogoutButton />
+            <button onClick={handleLogout} className="logout-btn">
+              <IoArrowForward />
+            </button>
           </div>
         </div>
       </header>
@@ -241,41 +248,46 @@ const HomePage = () => {
               </ul>
             </>
           ) : (
-            <div id="Slider">
-              <div className="slider-container">
-                <div className="slider-wrapper">
-                  <div
-                    className="slider-list"
-                    style={{ transform: `translateX(${-500 * sliderIndex}px)` }}
-                  >
-                    {sliderImages.map((img, index) => (
-                      <img
+            <div id="Slider" className="hero-section">
+              <div className="hero-content">
+                {/* <div className="hero-text">
+                  <h1>Khám phá âm nhạc của bạn</h1>
+                  <p>Tìm kiếm và tạo danh sách phát yêu thích của bạn</p>
+                </div> */}
+                <div className="slider-container">
+                  <div className="slider-wrapper">
+                    <div className="slider-list">
+                      {sliderImages.map((img, index) => (
+                        <img
+                          key={index}
+                          src={img}
+                          className={`slider-list-img ${
+                            sliderIndex === index ? "active" : ""
+                          }`}
+                          alt={`slider ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="arrow">
+                    <div className="arrow-left" onClick={handlePrevSlide}>
+                      &lt;
+                    </div>
+                    <div className="arrow-right" onClick={handleNextSlide}>
+                      &gt;
+                    </div>
+                  </div>
+                  <div className="navigation-dots">
+                    {sliderImages.map((_, index) => (
+                      <span
                         key={index}
-                        src={img}
-                        className="slider-list-img"
-                        alt={`slider ${index + 1}`}
+                        className={`dot dot-${index} ${
+                          sliderIndex === index ? "active" : ""
+                        }`}
+                        onClick={() => setSliderIndex(index)}
                       />
                     ))}
                   </div>
-                </div>
-                <div className="arrow">
-                  <div className="arrow-left" onClick={handlePrevSlide}>
-                    &lt;
-                  </div>
-                  <div className="arrow-right" onClick={handleNextSlide}>
-                    &gt;
-                  </div>
-                </div>
-                <div className="navigation-dots">
-                  {sliderImages.map((_, index) => (
-                    <span
-                      key={index}
-                      className={`dot dot-${index} ${
-                        sliderIndex === index ? "active" : ""
-                      }`}
-                      onClick={() => setSliderIndex(index)}
-                    />
-                  ))}
                 </div>
               </div>
             </div>

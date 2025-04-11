@@ -4,54 +4,51 @@
 .search-container {
   display: flex;
   align-items: center;
-  background-color: #ffffff; /* Nền trắng */
-  border-radius: 20px; /* Bo góc lớn */
-  padding: 6px 10px; /* Padding hợp lý */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
-  width: 180px; /* Chiều rộng ban đầu nhỏ hơn */
-  margin: 0 auto;
-  transition: width 0.4s ease; /* Hiệu ứng mở rộng */
-}
-
-/* Mở rộng ô tìm kiếm khi focus */
-.search-container:focus-within {
-  width: 270px;
-}
-
-.search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: none; /* Không có nền */
-  font-size: 14px; /* Kích thước chữ phù hợp */
-  color: #333;
-  padding-left: 15px; /* Thêm padding-left để placeholder không sát mép trái */
-  padding-right: 10px; /* Đảm bảo có khoảng cách bên phải */
-  line-height: 30px; /* Căn giữa theo chiều dọc */
-  transition: 0.4s; /* Hiệu ứng chuyển đổi */
-}
-
-.search-input::placeholder {
-  color: #999; /* Màu placeholder xám nhạt */
-  font-size: 14px;
+  position: relative;
 }
 
 .search-icon {
-  font-size: 16px;
-  color: #3b82f6; /* Màu xanh của Sky Music */
+  font-size: 24px; /* Tăng kích thước kính lúp */
+  color: #3b82f6;
   cursor: pointer;
-  transition: color 0.4s; /* Hiệu ứng chuyển đổi màu */
-  padding-right: 24px;
+  transition: color 0.4s;
+  padding: 5px;
 }
 
-/* Thêm hiệu ứng hover cho biểu tượng kính lúp */
 .search-icon:hover {
-  color: #2563eb; /* Đổi màu thành xanh đậm khi hover */
+  color: #2563eb;
 }
 
-/* Xóa style của search-btn vì không còn sử dụng */
-.search-btn {
-  display: none; /* Ẩn style này vì không còn nút "Tìm" */
+.search-input-wrapper {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.4s ease; /* Hiệu ứng trượt */
+  position: absolute;
+  right: 40px; /* Đặt ô tìm kiếm bên trái kính lúp */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.search-input-wrapper.visible {
+  width: 250px; /* Kích thước khi mở ra */
+}
+
+.search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: #ffffff;
+  font-size: 14px;
+  color: #333;
+  padding: 6px 10px;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  line-height: 30px;
+}
+
+.search-input::placeholder {
+  color: #999;
+  font-size: 14px;
 }
 
 /* History Container */
@@ -77,7 +74,7 @@
 }
 
 .history-container .clear-history-btn {
-  background-color: #ff4444; /* Màu đỏ */
+  background-color: #ff4444;
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -88,7 +85,7 @@
 }
 
 .history-container .clear-history-btn:hover {
-  background-color: #cc0000; /* Đậm hơn khi hover */
+  background-color: #cc0000;
 }
 
 .history-container .history-item {
@@ -104,7 +101,7 @@
 }
 
 .history-container .history-item:hover {
-  background-color: #e0f2fe; /* Màu xanh nhạt khi hover */
+  background-color: #e0f2fe;
 }
 
 .history-container .history-item span {
