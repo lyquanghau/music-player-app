@@ -5,11 +5,17 @@ import axios from "axios";
 import Search from "./Search";
 import CustomPlaylists from "./CustomPlaylists";
 import { usePlaylist } from "../PlaylistContext";
-import { IoArrowForward } from "react-icons/io5";
-import Cloud3D from "./particles/Cloud3D";
+import { IoArrowForward } from "react-icons/io5"; // Biểu tượng mũi tên
 import "../assets/css/HomePage.css";
 
 import logo from "../assets/logo.png";
+import Slider1 from "../assets/Sliders/Sliders_1.png";
+import Slider2 from "../assets/Sliders/Sliders_2.png";
+import Slider3 from "../assets/Sliders/Sliders_3.png";
+import Slider4 from "../assets/Sliders/Sliders_4.png";
+import Slider5 from "../assets/Sliders/Sliders_5.png";
+import Slider6 from "../assets/Sliders/Sliders_6.png";
+import Slider7 from "../assets/Sliders/Sliders_7.png";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
@@ -17,13 +23,31 @@ const HomePage = () => {
   const { triggerPlaylistRefresh } = usePlaylist();
   const navigate = useNavigate();
 
+  const [sliderIndex, setSliderIndex] = useState(0);
+  const sliderImages = [
+    Slider1,
+    Slider2,
+    Slider3,
+    Slider4,
+    Slider5,
+    Slider6,
+    Slider7,
+  ];
+  const sliderLength = sliderImages.length;
+
   const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [videoToAdd, setVideoToAdd] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [musicNotes, setMusicNotes] = useState([]);
+
+  useEffect(() => {
+    const sliderInterval = setInterval(() => {
+      setSliderIndex((prev) => (prev === sliderLength - 1 ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(sliderInterval);
+  }, [sliderLength]);
 
   useEffect(() => {
     const fetchPlaylists = async () => {
@@ -42,70 +66,13 @@ const HomePage = () => {
     fetchPlaylists();
   }, []);
 
-  // Tạo nốt nhạc đồng đều
-  useEffect(() => {
-    const generateMusicNotes = () => {
-      const notes = [];
-      const noteTypes = ["♪", "♫"]; // Các loại nốt nhạc
-      const rows = 8; // Số hàng
-      const cols = 16; // Số cột
-      const totalNotes = rows * cols; // Tổng số nốt nhạc
+  const handleNextSlide = () => {
+    setSliderIndex((prev) => (prev === sliderLength - 1 ? 0 : prev + 1));
+  };
 
-      for (let i = 0; i < totalNotes; i++) {
-        const row = Math.floor(i / cols); // Hàng
-        const col = i % cols; // Cột
-
-        // Tính vị trí trung tâm của ô lưới
-        const x = (col + 0.5) * (100 / cols); // Vị trí x (trung tâm ô)
-        const y = (row + 0.5) * (100 / rows); // Vị trí y (trung tâm ô)
-
-        // Thêm một chút ngẫu nhiên trong ô (trong khoảng ±10% kích thước ô)
-        const offsetX = (Math.random() - 0.5) * (100 / cols) * 0.6; // ±30% chiều rộng ô
-        const offsetY = (Math.random() - 0.5) * (100 / rows) * 0.6; // ±30% chiều cao ô
-
-        const note = {
-          id: i,
-          x: x + offsetX, // Vị trí x cuối cùng
-          y: y + offsetY, // Vị trí y cuối cùng
-          type: noteTypes[Math.floor(Math.random() * noteTypes.length)], // Chọn ngẫu nhiên loại nốt nhạc
-        };
-        notes.push(note);
-      }
-      setMusicNotes(notes);
-    };
-
-    generateMusicNotes();
-  }, []);
-
-  // Hiệu ứng di chuột
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const mouseX = (e.clientX / window.innerWidth) * 100;
-      const mouseY = (e.clientY / window.innerHeight) * 100;
-
-      const notes = document.querySelectorAll(".music-note");
-      notes.forEach((note) => {
-        const rect = note.getBoundingClientRect();
-        const noteX = (rect.left / window.innerWidth) * 100;
-        const noteY = (rect.top / window.innerHeight) * 100;
-
-        const distance = Math.sqrt(
-          Math.pow(mouseX - noteX, 2) + Math.pow(mouseY - noteY, 2)
-        );
-
-        if (distance < 5) {
-          note.classList.add("glow");
-        } else {
-          note.classList.remove("glow");
-        }
-      });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
+  const handlePrevSlide = () => {
+    setSliderIndex((prev) => (prev === 0 ? sliderLength - 1 : prev - 1));
+  };
 
   const handleSelectVideo = async (videoId, index) => {
     navigate(`/play/${videoId}`);
@@ -180,26 +147,13 @@ const HomePage = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
+    // Logic đăng xuất (giả định)
+    localStorage.removeItem("token"); // Xóa token hoặc dữ liệu đăng nhập
+    navigate("/"); // Chuyển hướng về trang đăng nhập
   };
 
   return (
     <div className="home-page">
-      {/* Hiển thị các nốt nhạc */}
-      {musicNotes.map((note) => (
-        <div
-          key={note.id}
-          className="music-note"
-          style={{
-            left: `${note.x}%`,
-            top: `${note.y}%`,
-          }}
-        >
-          {note.type}
-        </div>
-      ))}
-
       <header id="Header">
         <div className="header-top">
           <div className="logo">
@@ -231,86 +185,121 @@ const HomePage = () => {
 
       <div id="Content" className="main-content">
         <div className="left-column">
-          <div className="hero-text">
-            <h1>Khám phá âm nhạc của bạn</h1>
-            <p>Tìm kiếm và tạo danh sách phát yêu thích của bạn</p>
-          </div>
-        </div>
-        <div className="right-column">
-          <Cloud3D id="cloud-container" />
-        </div>
-      </div>
-
-      <div className="hidden-sections" style={{ display: "" }}>
-        {videoList.length > 0 && (
-          <div className="search-results">
-            <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
-              Kết quả tìm kiếm
-            </h3>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: "0",
-                maxHeight: "400px",
-                overflowY: "auto",
-              }}
-            >
-              {videoList.map((item, index) => (
-                <li
-                  key={item.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    padding: "10px",
-                    borderBottom: "1px solid #eee",
-                    backgroundColor: "#f9f9f9",
-                    transition: "background-color 0.2s",
-                  }}
-                >
-                  <img
-                    src={item.thumbnail}
-                    alt={item.title}
-                    style={{ width: "50px", borderRadius: "4px" }}
-                    loading="lazy"
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
-                      onClick={() => handleSelectVideo(item.id, index)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <div style={{ fontWeight: "bold", color: "#333" }}>
-                        {item.title}
-                      </div>
-                      <div style={{ color: "#666", fontSize: "14px" }}>
-                        {item.channel}
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleOpenPlaylistModal(item.id)}
+          {videoList.length > 0 ? (
+            <>
+              <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
+                Kết quả tìm kiếm
+              </h3>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: "0",
+                  maxHeight: "400px",
+                  overflowY: "auto",
+                }}
+              >
+                {videoList.map((item, index) => (
+                  <li
+                    key={item.id}
                     style={{
-                      padding: "5px 10px",
-                      backgroundColor: "#28a745",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "10px",
+                      borderBottom: "1px solid #eee",
+                      backgroundColor: "#f9f9f9",
+                      transition: "background-color 0.2s",
                     }}
                   >
-                    +
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <CustomPlaylists
-          onSelectVideo={handleSelectVideo}
-          playFromPlaylist={playFromPlaylist}
-          onAddToPlaylist={handleAddToPlaylist}
-        />
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      style={{ width: "50px", borderRadius: "4px" }}
+                      loading="lazy"
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div
+                        onClick={() => handleSelectVideo(item.id, index)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div style={{ fontWeight: "bold", color: "#333" }}>
+                          {item.title}
+                        </div>
+                        <div style={{ color: "#666", fontSize: "14px" }}>
+                          {item.channel}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleOpenPlaylistModal(item.id)}
+                      style={{
+                        padding: "5px 10px",
+                        backgroundColor: "#28a745",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      +
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <div id="Slider" className="hero-section">
+              <div className="hero-content">
+                {/* <div className="hero-text">
+                  <h1>Khám phá âm nhạc của bạn</h1>
+                  <p>Tìm kiếm và tạo danh sách phát yêu thích của bạn</p>
+                </div> */}
+                <div className="slider-container">
+                  <div className="slider-wrapper">
+                    <div className="slider-list">
+                      {sliderImages.map((img, index) => (
+                        <img
+                          key={index}
+                          src={img}
+                          className={`slider-list-img ${
+                            sliderIndex === index ? "active" : ""
+                          }`}
+                          alt={`slider ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="arrow">
+                    <div className="arrow-left" onClick={handlePrevSlide}>
+                      &lt;
+                    </div>
+                    <div className="arrow-right" onClick={handleNextSlide}>
+                      &gt;
+                    </div>
+                  </div>
+                  <div className="navigation-dots">
+                    {sliderImages.map((_, index) => (
+                      <span
+                        key={index}
+                        className={`dot dot-${index} ${
+                          sliderIndex === index ? "active" : ""
+                        }`}
+                        onClick={() => setSliderIndex(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="right-column">
+          <CustomPlaylists
+            onSelectVideo={handleSelectVideo}
+            playFromPlaylist={playFromPlaylist}
+            onAddToPlaylist={handleAddToPlaylist}
+          />
+        </div>
       </div>
 
       {showPlaylistModal && (
