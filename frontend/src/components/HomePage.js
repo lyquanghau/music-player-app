@@ -5,19 +5,13 @@ import axios from "axios";
 import Search from "./Search";
 import CustomPlaylists from "./CustomPlaylists";
 import { usePlaylist } from "../PlaylistContext";
-import { IoArrowForward } from "react-icons/io5"; // Biểu tượng mũi tên
+import { IoArrowForward } from "react-icons/io5";
+import Cloud3D from "./particles/Cloud3D";
 import "../assets/css/HomePage.css";
 import api from "../api/api";
 import SearchResults from "./SearchResults";
 
 import logo from "../assets/logo.png";
-import Slider1 from "../assets/Sliders/Sliders_1.png";
-import Slider2 from "../assets/Sliders/Sliders_2.png";
-import Slider3 from "../assets/Sliders/Sliders_3.png";
-import Slider4 from "../assets/Sliders/Sliders_4.png";
-import Slider5 from "../assets/Sliders/Sliders_5.png";
-import Slider6 from "../assets/Sliders/Sliders_6.png";
-import Slider7 from "../assets/Sliders/Sliders_7.png";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
@@ -25,31 +19,13 @@ const HomePage = () => {
   const { triggerPlaylistRefresh } = usePlaylist();
   const navigate = useNavigate();
 
-  const [sliderIndex, setSliderIndex] = useState(0);
-  const sliderImages = [
-    Slider1,
-    Slider2,
-    Slider3,
-    Slider4,
-    Slider5,
-    Slider6,
-    Slider7,
-  ];
-  const sliderLength = sliderImages.length;
-
   const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [videoToAdd, setVideoToAdd] = useState(null);
   const [notification, setNotification] = useState(null);
-
-  useEffect(() => {
-    const sliderInterval = setInterval(() => {
-      setSliderIndex((prev) => (prev === sliderLength - 1 ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(sliderInterval);
-  }, [sliderLength]);
+  const [musicNotes, setMusicNotes] = useState([]);
 
   useEffect(() => {
     const fetchPlaylists = async () => {
@@ -68,13 +44,70 @@ const HomePage = () => {
     fetchPlaylists();
   }, []);
 
-  const handleNextSlide = () => {
-    setSliderIndex((prev) => (prev === sliderLength - 1 ? 0 : prev + 1));
-  };
+  // Tạo nốt nhạc đồng đều
+  useEffect(() => {
+    const generateMusicNotes = () => {
+      const notes = [];
+      const noteTypes = ["♪", "♫"]; // Các loại nốt nhạc
+      const rows = 8; // Số hàng
+      const cols = 16; // Số cột
+      const totalNotes = rows * cols; // Tổng số nốt nhạc
 
-  const handlePrevSlide = () => {
-    setSliderIndex((prev) => (prev === 0 ? sliderLength - 1 : prev - 1));
-  };
+      for (let i = 0; i < totalNotes; i++) {
+        const row = Math.floor(i / cols); // Hàng
+        const col = i % cols; // Cột
+
+        // Tính vị trí trung tâm của ô lưới
+        const x = (col + 0.5) * (100 / cols); // Vị trí x (trung tâm ô)
+        const y = (row + 0.5) * (100 / rows); // Vị trí y (trung tâm ô)
+
+        // Thêm một chút ngẫu nhiên trong ô (trong khoảng ±10% kích thước ô)
+        const offsetX = (Math.random() - 0.5) * (100 / cols) * 0.6; // ±30% chiều rộng ô
+        const offsetY = (Math.random() - 0.5) * (100 / rows) * 0.6; // ±30% chiều cao ô
+
+        const note = {
+          id: i,
+          x: x + offsetX, // Vị trí x cuối cùng
+          y: y + offsetY, // Vị trí y cuối cùng
+          type: noteTypes[Math.floor(Math.random() * noteTypes.length)], // Chọn ngẫu nhiên loại nốt nhạc
+        };
+        notes.push(note);
+      }
+      setMusicNotes(notes);
+    };
+
+    generateMusicNotes();
+  }, []);
+
+  // Hiệu ứng di chuột
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const mouseX = (e.clientX / window.innerWidth) * 100;
+      const mouseY = (e.clientY / window.innerHeight) * 100;
+
+      const notes = document.querySelectorAll(".music-note");
+      notes.forEach((note) => {
+        const rect = note.getBoundingClientRect();
+        const noteX = (rect.left / window.innerWidth) * 100;
+        const noteY = (rect.top / window.innerHeight) * 100;
+
+        const distance = Math.sqrt(
+          Math.pow(mouseX - noteX, 2) + Math.pow(mouseY - noteY, 2)
+        );
+
+        if (distance < 5) {
+          note.classList.add("glow");
+        } else {
+          note.classList.remove("glow");
+        }
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
 
   const handleSelectVideo = async (videoId, index) => {
     navigate(`/play/${videoId}`);
@@ -146,14 +179,25 @@ const HomePage = () => {
   };
 
   const handleLogout = () => {
-    // Logic đăng xuất (giả định)
-    localStorage.removeItem("token"); // Xóa token hoặc dữ liệu đăng nhập
-    navigate("/"); // Chuyển hướng về trang đăng nhập
+    localStorage.removeItem("token");
+    navigate("/");
   };
 
   return (
     <div className="home-page">
-      {/* ================= HEADER ================= */}
+  {musicNotes.map((note) => (
+    <div
+      key={note.id}
+      className="music-note"
+      style={{
+        left: `${note.x}%`,
+        top: `${note.y}%`,
+      }}
+    >
+      {note.type}
+    </div>
+  ))}
+
       <header id="Header">
         <div className="header-top">
           <div className="logo">
@@ -194,64 +238,66 @@ const HomePage = () => {
       <div id="Content" className="main-content">
         {/* ===== LEFT COLUMN ===== */}
         <div className="left-column">
-          {videoList.length > 0 ? (
-            <SearchResults
-              videoList={videoList}
-              onSelectVideo={handleSelectVideo}
-              onAddToPlaylist={handleOpenPlaylistModal}
-            />
-          ) : (
-            <div id="Slider" className="hero-section">
-              <div className="hero-content">
-                <div className="slider-container">
-                  <div className="slider-wrapper">
-                    <div className="slider-list">
-                      {sliderImages.map((img, index) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`slider ${index + 1}`}
-                          className={`slider-list-img ${
-                            sliderIndex === index ? "active" : ""
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="arrow">
-                    <div className="arrow-left" onClick={handlePrevSlide}>
-                      &lt;
-                    </div>
-                    <div className="arrow-right" onClick={handleNextSlide}>
-                      &gt;
-                    </div>
-                  </div>
-
-                  <div className="navigation-dots">
-                    {sliderImages.map((_, index) => (
-                      <span
-                        key={index}
-                        className={`dot dot-${index} ${
-                          sliderIndex === index ? "active" : ""
-                        }`}
-                        onClick={() => setSliderIndex(index)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
+  {videoList.length > 0 ? (
+    <SearchResults
+      videoList={videoList}
+      onSelectVideo={handleSelectVideo}
+      onAddToPlaylist={handleOpenPlaylistModal}
+    />
+  ) : (
+    <div id="Slider" className="hero-section">
+      <div className="hero-content">
+        <div className="slider-container">
+          <div className="slider-wrapper">
+            <div className="slider-list">
+              {sliderImages.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`slider ${index + 1}`}
+                  className={`slider-list-img ${
+                    sliderIndex === index ? "active" : ""
+                  }`}
+                />
+              ))}
             </div>
-          )}
+          </div>
+
+          <div className="arrow">
+            <div className="arrow-left" onClick={handlePrevSlide}>
+              &lt;
+            </div>
+            <div className="arrow-right" onClick={handleNextSlide}>
+              &gt;
+            </div>
+          </div>
+
+          <div className="navigation-dots">
+            {sliderImages.map((_, index) => (
+              <span
+                key={index}
+                className={`dot dot-${index} ${
+                  sliderIndex === index ? "active" : ""
+                }`}
+                onClick={() => setSliderIndex(index)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
+          <div className="hero-text">
+            <h1>Khám phá âm nhạc của bạn</h1>
+            <p>Tìm kiếm và tạo danh sách phát yêu thích của bạn</p>
+          </div>
         </div>
 
         {/* ===== RIGHT COLUMN ===== */}
         <div className="right-column">
-          <CustomPlaylists
-            onSelectVideo={handleSelectVideo}
-            playFromPlaylist={playFromPlaylist}
-            onAddToPlaylist={handleAddToPlaylist}
-          />
+          <Cloud3D id="cloud-container" />
         </div>
       </div>
 
