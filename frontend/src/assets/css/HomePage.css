@@ -47,11 +47,10 @@
 .home-page .header-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0;
-  gap: 30px;
+  padding: 0 30px; /* Giữ padding ngang */
+  gap: 20px; /* Giảm khoảng cách giữa các thành phần */
   width: 100%;
 }
 
@@ -65,13 +64,12 @@
 }
 
 .home-page .nav-main {
-  flex: 1;
+  flex: 2; /* Tăng độ ưu tiên không gian cho nav */
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 30px; /* Giảm khoảng cách giữa các mục */
+  gap: 30px; /* Giữ khoảng cách giữa các liên kết */
+  margin-left: 20px; /* Dịch sang trái 20px */
   font-weight: bold;
-  /* max-width: 600px; */
 }
 
 .home-page .nav-main a {
@@ -106,6 +104,7 @@
 .home-page .search-bar {
   display: flex;
   align-items: center;
+  margin-left: auto; /* Đẩy search-bar sang bên phải */
 }
 
 .home-page .auth-buttons {

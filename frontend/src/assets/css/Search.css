@@ -1,124 +1,148 @@
-/* src/assets/css/Search.css */
+/* ================= WRAPPER ================= */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
 
-/* Search Container */
-.search-container {
+/* ================= SEARCH BOX ================= */
+.search-box {
   display: flex;
   align-items: center;
-  position: relative;
+  gap: 12px;
+
+  padding: 12px 16px;
+  border-radius: 18px;
+
+  background: #ffffff;
+  border: 1px solid #dbe6ff;
+
+  transition: all 0.25s ease;
 }
 
-.search-icon {
-  font-size: 24px; /* Tăng kích thước kính lúp */
-  color: #3b82f6;
-  cursor: pointer;
-  transition: color 0.4s;
-  padding: 5px;
+.search-box.active {
+  border-color: #6aa8ff;
+  box-shadow: 0 8px 24px rgba(106, 168, 255, 0.25);
 }
 
-.search-icon:hover {
-  color: #2563eb;
-}
-
-.search-input-wrapper {
-  width: 0;
-  overflow: hidden;
-  transition: width 0.4s ease; /* Hiệu ứng trượt */
-  position: absolute;
-  right: 40px; /* Đặt ô tìm kiếm bên trái kính lúp */
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.search-input-wrapper.visible {
-  width: 250px; /* Kích thước khi mở ra */
-}
-
-.search-input {
-  width: 100%;
+/* ================= INPUT ================= */
+.search-box input {
+  flex: 1;
+  background: transparent;
   border: none;
   outline: none;
-  background: #ffffff;
-  font-size: 14px;
-  color: #333;
-  padding: 6px 10px;
-  border-radius: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  line-height: 30px;
+
+  font-size: 15px;
+  color: #2c3e50;
 }
 
-.search-input::placeholder {
-  color: #999;
-  font-size: 14px;
+.search-box input::placeholder {
+  color: #9aa9c2;
 }
 
-/* History Container */
-.history-container {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  z-index: 1000;
-  max-width: 500px;
-  margin: 5px auto 0;
+/* ================= ICONS ================= */
+.search-icon {
+  font-size: 18px;
+  color: #6aa8ff;
 }
 
-.history-container h3 {
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.history-container .clear-history-btn {
-  background-color: #ff4444;
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background-color 0.3s;
-}
-
-.history-container .clear-history-btn:hover {
-  background-color: #cc0000;
-}
-
-.history-container .history-item {
+.search-submit {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background-color: #f9f9f9;
-  border-radius: 4px;
-  padding: 5px 10px;
-  margin-bottom: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
+  justify-content: center;
 
-.history-container .history-item:hover {
-  background-color: #e0f2fe;
-}
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
 
-.history-container .history-item span {
-  font-size: 14px;
-  color: #333;
-}
+  background: linear-gradient(135deg, #6aa8ff, #8fc6ff);
 
-.history-container .history-item .remove-btn {
-  background-color: transparent;
   border: none;
-  color: #ff4444;
+  color: #ffffff;
   font-size: 16px;
   cursor: pointer;
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.history-container .no-history {
+.search-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(106, 168, 255, 0.45);
+}
+
+/* ================= DROPDOWN ================= */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #dbe6ff;
+
+  overflow: hidden;
+  z-index: 50;
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* ================= ITEM ================= */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px 16px;
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: #eef4ff;
+}
+
+.dropdown-icon {
   font-size: 14px;
-  color: #666;
+  color: #6aa8ff;
+}
+
+.dropdown-text {
+  flex: 1;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+/* ================= REMOVE ================= */
+.dropdown-remove {
+  background: transparent;
+  border: none;
+  color: #9aa9c2;
+  cursor: pointer;
+}
+
+.dropdown-remove:hover {
+  color: #ff6b6b;
+}
+
+/* ================= FOOTER ================= */
+.dropdown-footer {
+  padding: 10px;
+  border-top: 1px solid #e4ecff;
   text-align: center;
+}
+
+.dropdown-footer button {
+  background: none;
+  border: none;
+
+  font-size: 13px;
+  color: #6aa8ff;
+  cursor: pointer;
+}
+
+.dropdown-footer button:hover {
+  text-decoration: underline;
 }

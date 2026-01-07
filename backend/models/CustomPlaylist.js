@@ -1,10 +1,25 @@
 const mongoose = require("mongoose");
 
-const customPlaylistSchema = new mongoose.Schema({
-  name: { type: String, required: true }, // Tên của danh sách phát
-  videos: [{ type: String }], // Danh sách video ID từ YouTube
-  thumbnail: { type: String }, // Ảnh đại diện
-  createdAt: { type: Date, default: Date.now }, // Thời gian tạo
-});
+const customPlaylistSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 1,
+      maxlength: 100,
+    },
+    videos: [{ type: String }],
+    thumbnail: { type: String },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+customPlaylistSchema.index({ userId: 1, createdAt: -1 });
 
 module.exports = mongoose.model("CustomPlaylist", customPlaylistSchema);

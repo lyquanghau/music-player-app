@@ -1,0 +1,123 @@
+/* ===== CONTAINER ===== */
+.search-results {
+  margin-top: 20px;
+}
+
+.search-results-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 14px;
+}
+
+/* ===== LIST ===== */
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* ===== CARD ===== */
+.search-result-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 12px 14px;
+  border-radius: 16px;
+
+  background: #ffffff;
+  border: 1px solid #e3edff;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-result-card:hover {
+  background: #f1f6ff;
+  transform: translateY(-1px);
+}
+
+/* ===== THUMB ===== */
+.search-result-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* ===== INFO ===== */
+.search-result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-result-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-result-channel {
+  font-size: 13px;
+  color: #7a8ca8;
+}
+
+/* ===== ADD BUTTON ===== */
+.search-result-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+
+  background: linear-gradient(135deg, #6aa8ff, #8fc6ff);
+  border: none;
+
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-result-add:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(106, 168, 255, 0.4);
+}
+
+/* ===== SKY MUSIC SCROLLBAR ===== */
+.search-results-list {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #9cc7ff transparent;
+}
+
+/* Chrome, Edge, Safari */
+.search-results-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search-results-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b6d8ff, #9cc7ff);
+  border-radius: 10px;
+}
+
+.search-results-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8bbcff, #6aa8ff);
+}

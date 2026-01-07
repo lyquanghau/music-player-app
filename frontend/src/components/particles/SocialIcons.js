@@ -36,7 +36,7 @@ const SocialIcons = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowMessage(false);
-    }, 10000); // 10 giây
+    }, 30000); // 10 giây
     return () => clearTimeout(timer); // Dọn dẹp khi component bị unmount
   }, []);
 
@@ -127,7 +127,7 @@ const SocialIcons = () => {
             borderRadius: "8px",
             padding: "4px 8px",
             color: "#fff",
-            fontSize: "0.5rem",
+            fontSize: "0.6rem",
             boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
             border: "1px solid rgba(255, 255, 255, 0.2)",
             opacity: showMessage ? 1 : 0,

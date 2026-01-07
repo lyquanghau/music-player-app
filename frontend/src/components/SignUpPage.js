@@ -39,7 +39,7 @@ const SignUpPage = () => {
         "Đăng ký thành công! Bạn sẽ được chuyển đến trang chính trong giây lát."
       );
       setTimeout(() => {
-        navigate("/player");
+        navigate("/home");
       }, 2000); // Chuyển hướng sau 2 giây
     } catch (error) {
       setMessage(error.response?.data?.message || "Đăng ký thất bại!");

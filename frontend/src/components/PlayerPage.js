@@ -93,7 +93,7 @@ const PlayerPage = () => {
 
   // Nút quay lại trang chính
   const handleBack = () => {
-    navigate("/player");
+    navigate("/home");
   };
 
   return (

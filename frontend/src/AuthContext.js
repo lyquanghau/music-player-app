@@ -10,66 +10,59 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Kiểm tra token khi ứng dụng khởi động
+  // Check token khi app khởi động
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-        const testExpiryTime = decoded.iat + 1000; // iat = thời điểm token được tạo
+    if (!token) return;
 
-        if (decoded.exp < currentTime) {
-          localStorage.removeItem("token");
-          setUser(null);
-        } else {
-          setUser({ id: decoded.id });
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
 
-          // Tự động logout sau 30s (tuỳ chọn)
-          const timeLeft = (testExpiryTime - currentTime) * 1000;
-          setTimeout(logout, timeLeft);
-        }
-      } catch (error) {
-        console.error("Invalid token:", error);
+      // ✅ DÙNG exp – CHUẨN JWT
+      if (decoded.exp < currentTime) {
         localStorage.removeItem("token");
         setUser(null);
+      } else {
+        setUser({
+          id: decoded.id,
+          username: decoded.username,
+        });
       }
+    } catch (error) {
+      console.error("Invalid token:", error);
+      localStorage.removeItem("token");
+      setUser(null);
     }
   }, []);
 
   const signup = async (username, password) => {
-    try {
-      const response = await axios.post(`${API_URL}/api/auth/register`, {
-        username,
-        password,
-      });
-      return response.data; // Trả về dữ liệu từ server (message, user)
-    } catch (error) {
-      console.error("Signup failed:", error.response?.data || error.message);
-      throw error;
-    }
+    const response = await axios.post(`${API_URL}/api/auth/register`, {
+      username,
+      password,
+    });
+    return response.data;
   };
 
   const login = async (username, password) => {
-    try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
-        username,
-        password,
-      });
-      const { token } = response.data;
-      if (!token) throw new Error("No token received from server");
-      localStorage.setItem("token", token);
-      const decoded = jwtDecode(token);
-      const userData = {
-        id: decoded.id,
-        username: decoded.username || username,
-      };
-      setUser(userData);
-      return userData;
-    } catch (error) {
-      console.error("Login failed:", error.response?.data || error.message);
-      throw error;
-    }
+    const response = await axios.post(`${API_URL}/api/auth/login`, {
+      username,
+      password,
+    });
+
+    const { token } = response.data;
+    if (!token) throw new Error("No token received");
+
+    localStorage.setItem("token", token);
+
+    const decoded = jwtDecode(token);
+    const userData = {
+      id: decoded.id,
+      username: decoded.username,
+    };
+
+    setUser(userData);
+    return userData;
   };
 
   const logout = () => {

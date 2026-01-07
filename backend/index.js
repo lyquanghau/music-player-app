@@ -11,12 +11,12 @@ const port = process.env.PORT || 8404; // Thêm giá trị mặc định nếu P
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:6704", // Đổi thành port của frontend React
-    credentials: true,
-    methods: ["GET", "POST", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
+    origin: "http://localhost:6704",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.options("*", cors());
 connectDB();
 // Routes

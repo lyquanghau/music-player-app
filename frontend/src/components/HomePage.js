@@ -7,6 +7,8 @@ import CustomPlaylists from "./CustomPlaylists";
 import { usePlaylist } from "../PlaylistContext";
 import { IoArrowForward } from "react-icons/io5"; // Biểu tượng mũi tên
 import "../assets/css/HomePage.css";
+import api from "../api/api";
+import SearchResults from "./SearchResults";
 
 import logo from "../assets/logo.png";
 import Slider1 from "../assets/Sliders/Sliders_1.png";
@@ -52,7 +54,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/custom-playlists`);
+        const response = await api.get("/custom-playlists");
         setPlaylists(response.data);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách playlist:", error);
@@ -122,12 +124,9 @@ const HomePage = () => {
   const handleAddToPlaylist = async (playlistId) => {
     if (!videoToAdd) return;
     try {
-      await axios.post(
-        `${API_URL}/api/custom-playlists/${playlistId}/add-video`,
-        {
-          videoId: videoToAdd,
-        }
-      );
+      await api.post(`/custom-playlists/${playlistId}/add-video`, {
+        videoId: videoToAdd,
+      });
       triggerPlaylistRefresh();
       setShowPlaylistModal(false);
       setVideoToAdd(null);
@@ -154,6 +153,7 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
+      {/* ================= HEADER ================= */}
       <header id="Header">
         <div className="header-top">
           <div className="logo">
@@ -161,6 +161,7 @@ const HomePage = () => {
               <img src={logo} alt="Sky Music" />
             </a>
           </div>
+
           <nav className="nav-main">
             <a href="/genres">Thể loại</a>
             <a href="/trending">Thịnh hành</a>
@@ -168,92 +169,40 @@ const HomePage = () => {
             <a href="/music-videos">Video âm nhạc</a>
             <a href="/channels">Kênh</a>
           </nav>
+
           <div className="search-bar">
             <Search
-              onSelectVideo={handleSelectVideo}
               setVideoList={setVideoList}
+              onSelectVideo={handleSelectVideo}
               onAddToPlaylist={handleOpenPlaylistModal}
             />
           </div>
+
           <div className="auth-buttons">
-            <button onClick={handleLogout} className="logout-btn">
+            <button
+              onClick={handleLogout}
+              className="logout-btn"
+              title="Đăng xuất"
+            >
               <IoArrowForward />
             </button>
           </div>
         </div>
       </header>
 
+      {/* ================= MAIN CONTENT ================= */}
       <div id="Content" className="main-content">
+        {/* ===== LEFT COLUMN ===== */}
         <div className="left-column">
           {videoList.length > 0 ? (
-            <>
-              <h3 style={{ fontSize: "1.2em", marginBottom: "10px" }}>
-                Kết quả tìm kiếm
-              </h3>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: "0",
-                  maxHeight: "400px",
-                  overflowY: "auto",
-                }}
-              >
-                {videoList.map((item, index) => (
-                  <li
-                    key={item.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "10px",
-                      borderBottom: "1px solid #eee",
-                      backgroundColor: "#f9f9f9",
-                      transition: "background-color 0.2s",
-                    }}
-                  >
-                    <img
-                      src={item.thumbnail}
-                      alt={item.title}
-                      style={{ width: "50px", borderRadius: "4px" }}
-                      loading="lazy"
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div
-                        onClick={() => handleSelectVideo(item.id, index)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div style={{ fontWeight: "bold", color: "#333" }}>
-                          {item.title}
-                        </div>
-                        <div style={{ color: "#666", fontSize: "14px" }}>
-                          {item.channel}
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleOpenPlaylistModal(item.id)}
-                      style={{
-                        padding: "5px 10px",
-                        backgroundColor: "#28a745",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      +
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
+            <SearchResults
+              videoList={videoList}
+              onSelectVideo={handleSelectVideo}
+              onAddToPlaylist={handleOpenPlaylistModal}
+            />
           ) : (
             <div id="Slider" className="hero-section">
               <div className="hero-content">
-                {/* <div className="hero-text">
-                  <h1>Khám phá âm nhạc của bạn</h1>
-                  <p>Tìm kiếm và tạo danh sách phát yêu thích của bạn</p>
-                </div> */}
                 <div className="slider-container">
                   <div className="slider-wrapper">
                     <div className="slider-list">
@@ -261,14 +210,15 @@ const HomePage = () => {
                         <img
                           key={index}
                           src={img}
+                          alt={`slider ${index + 1}`}
                           className={`slider-list-img ${
                             sliderIndex === index ? "active" : ""
                           }`}
-                          alt={`slider ${index + 1}`}
                         />
                       ))}
                     </div>
                   </div>
+
                   <div className="arrow">
                     <div className="arrow-left" onClick={handlePrevSlide}>
                       &lt;
@@ -277,6 +227,7 @@ const HomePage = () => {
                       &gt;
                     </div>
                   </div>
+
                   <div className="navigation-dots">
                     {sliderImages.map((_, index) => (
                       <span
@@ -293,6 +244,8 @@ const HomePage = () => {
             </div>
           )}
         </div>
+
+        {/* ===== RIGHT COLUMN ===== */}
         <div className="right-column">
           <CustomPlaylists
             onSelectVideo={handleSelectVideo}
@@ -302,10 +255,12 @@ const HomePage = () => {
         </div>
       </div>
 
+      {/* ================= MODAL ADD PLAYLIST ================= */}
       {showPlaylistModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Chọn playlist để thêm</h3>
+
             {playlists.length === 0 ? (
               <p>Chưa có playlist nào</p>
             ) : (
@@ -320,11 +275,13 @@ const HomePage = () => {
                 ))}
               </ul>
             )}
+
             <button onClick={() => setShowPlaylistModal(false)}>Đóng</button>
           </div>
         </div>
       )}
 
+      {/* ================= NOTIFICATION ================= */}
       {notification && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
