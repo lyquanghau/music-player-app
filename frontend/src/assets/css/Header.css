@@ -1,0 +1,180 @@
+/* ================= HEADER BASE ================= */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+}
+
+/* Glass background */
+
+.header.glass-effect {
+  background: rgba(255, 255, 255, 0.08); /* trong suốt */
+  backdrop-filter: blur(14px);
+  box-shadow: none; /* bỏ bóng để không cắt */
+}
+
+/* ================= NAV CONTAINER ================= */
+.header-nav {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+
+  display: flex;
+  align-items: center;
+}
+
+/* ================= LOGO ================= */
+.header-logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.header-logo-img {
+  height: 68px;
+  width: auto;
+  display: block;
+}
+
+/* ================= MENU (DESKTOP) ================= */
+.header-menu {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-left: 72px; /* 👈 kiểm soát khoảng cách */
+}
+
+.header-menu button {
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  position: relative;
+  padding: 4px 0;
+}
+
+.header-menu button:hover {
+  color: #ffffff;
+}
+
+.header-menu button::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 0;
+  height: 2px;
+  background: #bfdbfe;
+  transform: translateX(-50%);
+  transition: width 0.25s ease;
+}
+
+.header-menu button:hover::after {
+  width: 100%;
+}
+
+/* ================= ACTIONS (RIGHT) ================= */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto; /* 👈 CHỐT HẠ */
+}
+
+/* ================= LOGOUT (ICON ONLY) ================= */
+.header-logout {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.header-logout:hover {
+  background: rgba(255, 255, 255, 0.45);
+  transform: scale(1.1);
+}
+
+/* ================= MOBILE TOGGLE ================= */
+.header-mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* ================= MOBILE MENU ================= */
+.header-mobile-menu {
+  position: absolute;
+  top: 80px;
+  left: 16px;
+  right: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+.header-mobile-menu button {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: left;
+  color: #1e3a8a;
+  cursor: pointer;
+}
+
+.header-mobile-menu button:hover {
+  color: #2563eb;
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 768px) {
+  .header-menu {
+    display: none;
+  }
+
+  .header-actions > .search-wrapper {
+    display: none;
+  }
+
+  .header-logout {
+    display: none;
+  }
+
+  .header-mobile-toggle {
+    display: block;
+  }
+}
+
+/* ================= SCROLL STATES ================= */
+
+.header-top {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+}
+
+.header-scrolled {
+  background: rgba(30, 58, 138, 0.65);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}

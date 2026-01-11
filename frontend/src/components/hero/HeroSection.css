@@ -1,0 +1,150 @@
+.hero-mood {
+  min-height: 100vh;
+  padding: 120px 56px 72px; /* đẩy content xuống dưới header */
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 48px; /* ↓ giảm gap */
+  align-items: center;
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+}
+
+.hero-mood::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(30, 58, 138, 0.35),
+    transparent 40%
+  );
+  pointer-events: none;
+}
+
+/* LEFT */
+.hero-left {
+  color: #ffffff;
+}
+
+.hero-tag {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #bfdbfe;
+}
+
+.hero-left h1 {
+  font-size: 44px; /* ↓ từ 56 */
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.hero-left h1 span {
+  color: #bfdbfe;
+}
+
+.hero-left p {
+  max-width: 420px;
+  font-size: 16px; /* ↓ */
+  line-height: 1.6;
+  color: #e0f2fe;
+  margin-bottom: 24px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-primary,
+.btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px; /* ↓ */
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #ffffff;
+  color: #1e3a8a;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #e0f2fe;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+}
+
+.btn-outline:hover {
+  background: #ffffff;
+  color: #1e3a8a;
+}
+
+/* RIGHT */
+.hero-right {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px; /* ↓ */
+}
+
+.playlist-card {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 14px; /* ↓ */
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.playlist-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.playlist-cover {
+  width: 100%;
+  height: 96px; /* ↓ */
+  border-radius: 10px;
+  background: linear-gradient(135deg, #bfdbfe, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px; /* ↓ */
+  margin-bottom: 10px;
+}
+
+.playlist-info h4 {
+  font-size: 14px; /* ↓ */
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.playlist-info span {
+  font-size: 12px;
+  color: #e0f2fe;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .hero-mood {
+    grid-template-columns: 1fr;
+    padding: 64px 20px;
+  }
+
+  .hero-right {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hero-left h1 {
+    font-size: 36px;
+  }
+}

@@ -1,0 +1,104 @@
+.genres-section {
+  padding: 80px 56px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.genres-header {
+  margin-bottom: 32px;
+}
+
+.genres-header h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.genres-header p {
+  color: #475569;
+  margin-top: 6px;
+}
+
+/* GRID */
+.genres-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* CARD */
+.genre-card {
+  position: relative;
+  height: 110px;
+  border-radius: 18px;
+  padding: 18px 20px;
+  color: #ffffff;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.genre-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* ICON BG */
+.genre-bg-icon {
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  font-size: 72px;
+  opacity: 0.18;
+}
+
+/* CONTENT */
+.genre-content h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.genre-content span {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* COLORS */
+.genre-card.pink {
+  background: linear-gradient(135deg, #f472b6, #ec4899);
+}
+
+.genre-card.blue {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+.genre-card.green {
+  background: linear-gradient(135deg, #34d399, #10b981);
+}
+
+.genre-card.yellow {
+  background: linear-gradient(135deg, #facc15, #eab308);
+}
+
+.genre-card.purple {
+  background: linear-gradient(135deg, #c084fc, #8b5cf6);
+}
+
+.genre-card.cyan {
+  background: linear-gradient(135deg, #67e8f9, #22d3ee);
+}
+
+.genre-card.red {
+  background: linear-gradient(135deg, #fb7185, #ef4444);
+}
+
+.genre-card.violet {
+  background: linear-gradient(135deg, #a78bfa, #6366f1);
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .genres-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

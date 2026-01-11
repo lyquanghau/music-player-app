@@ -1,8 +1,7 @@
-/* src/assets/css/HomePage.css */
+/* ================= HOME PAGE BASE ================= */
 .home-page {
   background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #bfdbfe 100%);
   min-height: 100vh;
-  padding: 0;
   margin: 0;
   position: relative;
   overflow: hidden;
@@ -11,10 +10,7 @@
 .home-page::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: radial-gradient(
     circle at 50% 30%,
     rgba(255, 255, 255, 0.3) 0%,
@@ -23,17 +19,21 @@
   pointer-events: none;
 }
 
-/* CSS cho nốt nhạc */
+/* ================= RESET LOCAL ================= */
+.home-page * {
+  box-sizing: border-box;
+}
+
+/* ================= MUSIC NOTES ================= */
 .music-note {
   position: absolute;
   font-size: 24px;
-  color: rgba(255, 255, 255, 0.3); /* Giảm độ trong suốt để mờ hơn */
+  color: rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
   z-index: 1;
   pointer-events: none;
 }
 
-/* Hiệu ứng sáng lên khi di chuột */
 .music-note.glow {
   color: #ffffff;
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.8),
@@ -41,184 +41,98 @@
   transform: scale(1.2);
 }
 
-.home-page * {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-}
-
-.home-page .text-white {
-  color: #fff !important;
-}
-
-.home-page .row {
-  margin-left: -8px;
-  margin-right: -8px;
-}
-
-.home-page .row::after {
-  content: "";
-  display: block;
-  clear: both;
-}
-
-.home-page .col {
-  float: left;
-  margin-left: 12px;
-  margin-right: 12px;
-}
-
-.home-page #Header {
-  background: transparent;
-  width: 100%;
-  padding: 15px 30px;
-  min-height: 80px;
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
-.home-page .header-top {
-  display: flex;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 30px; /* Giữ padding ngang */
-  gap: 20px; /* Giảm khoảng cách giữa các thành phần */
-  width: 100%;
-}
-
-.home-page .logo {
-  margin-left: 20px;
-}
-
-.home-page .logo img {
-  height: 70px;
-  width: auto;
-}
-
-.home-page .nav-main {
-  flex: 2;
-  display: flex;
-  align-items: center;
-  gap: 30px;
-  margin-left: 20px;
-  font-weight: bold;
-}
-
-.home-page .nav-main a {
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 16px;
-  text-transform: none;
-  transition: color 0.3s, border-bottom 0.3s;
-  position: relative;
-}
-
-.home-page .nav-main a::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 1px;
-  background-color: #bfdbfe;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  transition: width 0.3s ease;
-}
-
-.home-page .nav-main a:hover::after {
-  width: 100%;
-}
-
-.home-page .search-bar {
-  display: flex;
-  align-items: center;
-  margin-left: auto; /* Đẩy search-bar sang bên phải */
-}
-
-.home-page .auth-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.auth-buttons .logout-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 24px;
-  color: #bfdbfe;
-  transition: color 0.3s, transform 0.3s;
-}
-
-.auth-buttons .logout-btn:hover {
-  color: #ffffff;
-  transform: scale(1.2);
-}
-
+/* ================= MAIN CONTENT ================= */
 .main-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px;
   display: flex;
-  gap: 20px;
-  background: transparent;
+  gap: 24px;
+  position: relative;
+  z-index: 2;
 }
 
-.main-content .left-column {
+.left-column {
   flex: 1;
   display: flex;
   align-items: center;
 }
 
-.hero-text {
-  text-align: left;
-}
-
-.hero-text h1 {
-  font-size: 48px;
-  color: #ffffff;
-  margin-bottom: 15px;
-  font-weight: bold;
-  background: linear-gradient(to right, #bfdbfe, #ffffff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  transition: transform 0.3s ease;
-}
-
-.hero-text h1:hover {
-  transform: translateY(-5px);
-}
-
-.hero-text p {
-  font-size: 18px;
-  color: #e0f2fe;
-  line-height: 1.5;
-}
-
-.main-content .right-column {
+.right-column {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
+/* ================= HERO / SLIDER ================= */
+.hero-section {
+  width: 100%;
+  position: relative;
+}
+
+.slider-list {
+  position: relative;
+  width: 100%;
+  height: 360px;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.slider-list img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.slider-list img.active {
+  opacity: 1;
+}
+
+.arrow {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.arrow span {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.arrow span:hover {
+  background: rgba(255, 255, 255, 0.6);
+  transform: scale(1.1);
+}
+
+/* ================= CLOUD ================= */
 .cloud-container {
   width: 100%;
   max-width: 500px;
   height: 400px;
-  border-radius: 10px;
+  border-radius: 16px;
   overflow: hidden;
-  background: transparent;
 }
 
+/* ================= MODAL ================= */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -226,10 +140,9 @@
 }
 
 .modal-content {
-  background-color: #ffffff;
+  background: #ffffff;
   padding: 20px;
-  border-radius: 8px;
-  text-align: center;
+  border-radius: 10px;
   width: 300px;
   border: 2px solid #3b82f6;
 }
@@ -237,6 +150,7 @@
 .modal-content ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .modal-content li {
@@ -249,39 +163,25 @@
   background-color: #e0f2fe;
 }
 
-.modal-content button {
-  padding: 5px 10px;
-  background-color: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.modal-content button:hover {
-  background-color: #2563eb;
-}
-
+/* ================= NOTIFICATION ================= */
 .notification {
   position: fixed;
   top: 20px;
   right: 20px;
   padding: 10px 20px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
   z-index: 1000;
   animation: slideIn 0.5s ease-out, fadeOut 0.5s ease-out 2.5s forwards;
 }
 
 .notification.success {
   background-color: #3b82f6;
-  color: white;
+  color: #fff;
 }
 
 .notification.error {
   background-color: #ff4444;
-  color: white;
+  color: #fff;
 }
 
 @keyframes slideIn {
@@ -296,59 +196,27 @@
 }
 
 @keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
   to {
     opacity: 0;
   }
 }
 
+/* ================= RESPONSIVE ================= */
 @media (max-width: 768px) {
-  .home-page .header-top {
+  .main-content {
     flex-direction: column;
-    gap: 10px;
+    padding: 16px;
   }
 
-  .home-page .nav-main {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    max-width: 100%;
-  }
-
-  .home-page .nav-main a {
-    font-size: 14px;
-  }
-
-  .home-page .search-bar {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .home-page .main-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .hero-text {
-    text-align: center;
-  }
-
-  .hero-text h1 {
-    font-size: 32px;
-  }
-
-  .hero-text p {
-    font-size: 16px;
-  }
-
-  .cloud-container {
-    max-width: 100%;
-    height: 300px;
+  .slider-list {
+    height: 260px;
   }
 
   .music-note {
     font-size: 18px;
+  }
+
+  .cloud-container {
+    height: 300px;
   }
 }

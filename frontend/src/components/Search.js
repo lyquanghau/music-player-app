@@ -7,10 +7,6 @@ import "../assets/css/Search.css";
 import useSearchHistory from "../hooks/useSearchHistory";
 import { useAuth } from "../AuthContext";
 
-/**
- * CHỈ LÀ BASE URL – KHÔNG CÓ /api
- * backend: app.use("/api", apiRoutes)
- */
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8404";
 
 /* ===================== UTILS ===================== */
@@ -23,7 +19,10 @@ const debounce = (fn, delay = 500) => {
 };
 
 /* ===================== COMPONENT ===================== */
-const Search = ({ setVideoList }) => {
+const Search = ({
+  setVideoList,
+  variant = "default", // 👈 default | header
+}) => {
   const { token } = useAuth();
   const { history, saveHistory, deleteHistory, clearHistory } =
     useSearchHistory(token);
@@ -39,7 +38,7 @@ const Search = ({ setVideoList }) => {
       const q = text.trim();
 
       if (q.length < 2) {
-        setError("Vui lòng nhập ít nhất 2 ký tự");
+        setError("Nhập ít nhất 2 ký tự");
         return;
       }
 
@@ -47,9 +46,9 @@ const Search = ({ setVideoList }) => {
       setLoading(true);
 
       try {
-        // Client cache (10 phút)
         const cacheKey = `search_${q}`;
         const cached = localStorage.getItem(cacheKey);
+
         if (cached) {
           const { items, timestamp } = JSON.parse(cached);
           if (Date.now() - timestamp < 600000) {
@@ -59,7 +58,6 @@ const Search = ({ setVideoList }) => {
           }
         }
 
-        // 🔥 GỌI ĐÚNG API
         const res = await axios.get(`${API_BASE}/api/search`, {
           params: { q },
         });
@@ -69,15 +67,10 @@ const Search = ({ setVideoList }) => {
 
         localStorage.setItem(
           cacheKey,
-          JSON.stringify({
-            items,
-            timestamp: Date.now(),
-          })
+          JSON.stringify({ items, timestamp: Date.now() })
         );
 
-        if (token) {
-          saveHistory(q);
-        }
+        if (token) saveHistory(q);
       } catch (err) {
         setError(err.response?.data?.message || "Không thể tìm kiếm");
       } finally {
@@ -99,9 +92,7 @@ const Search = ({ setVideoList }) => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    }
+    if (e.key === "Enter") handleSubmit();
   };
 
   const handleHistoryClick = (text) => {
@@ -110,24 +101,21 @@ const Search = ({ setVideoList }) => {
     performSearch(text);
   };
 
-  /* ===================== UI DATA ===================== */
   const uniqueHistory = useMemo(() => {
     const map = new Map();
-    history.forEach((h) => {
-      map.set(h.query.toLowerCase(), h);
-    });
+    history.forEach((h) => map.set(h.query.toLowerCase(), h));
     return Array.from(map.values());
   }, [history]);
 
   /* ===================== RENDER ===================== */
   return (
-    <div className="search-wrapper">
+    <div className={`search-wrapper search-${variant}`}>
       <div className={`search-box ${expanded ? "active" : ""}`}>
         <IoSearch className="search-icon" />
 
         <input
           type="text"
-          placeholder="Tìm nhạc, video, playlist..."
+          placeholder="Tìm bài hát, nghệ sĩ, playlist..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -143,7 +131,12 @@ const Search = ({ setVideoList }) => {
         </button>
       </div>
 
-      {/* DROPDOWN HISTORY */}
+      {/* ERROR / LOADING */}
+      {expanded && (error || loading) && (
+        <div className="search-status">{loading ? "Searching..." : error}</div>
+      )}
+
+      {/* HISTORY */}
       {expanded && token && uniqueHistory.length > 0 && (
         <div className="search-dropdown">
           {uniqueHistory.map((item) => (
@@ -168,7 +161,7 @@ const Search = ({ setVideoList }) => {
           ))}
 
           <div className="dropdown-footer">
-            <button onMouseDown={clearHistory}>Xóa toàn bộ lịch sử</button>
+            <button onMouseDown={clearHistory}>Clear search history</button>
           </div>
         </div>
       )}

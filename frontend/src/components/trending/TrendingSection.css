@@ -1,0 +1,95 @@
+/* components/trending/TrendingSection.css */
+
+.trending-section {
+  padding: 64px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.trending-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.trending-desc {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.trending-list {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trending-item {
+  display: grid;
+  grid-template-columns: 46px 1fr 80px 40px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trending-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.rank {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.song-info strong {
+  font-size: 15px;
+  display: block;
+}
+
+.song-info span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.change {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.change.up {
+  color: #16a34a;
+}
+
+.change.down {
+  color: #dc2626;
+}
+
+.play-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+}
