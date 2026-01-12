@@ -1,0 +1,73 @@
+/* components/channels/ChannelsSection.css */
+
+.channels-section {
+  padding: 64px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.channels-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e3a8a;
+}
+
+.channels-desc {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.channels-list {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.channel-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.channel-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.channel-card img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.channel-info strong {
+  font-size: 15px;
+  display: block;
+}
+
+.channel-info span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.channel-play {
+  margin-left: auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

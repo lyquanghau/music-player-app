@@ -1,4 +1,5 @@
 import "./GenresSection.css";
+import useScrollReveal from "../../hooks/useScrollReveal";
 
 const GENRES = [
   { id: 1, title: "Pop", desc: "Nhạc phổ biến", icon: "🎤", color: "pink" },
@@ -48,16 +49,26 @@ const GENRES = [
 ];
 
 export default function GenresSection() {
+  /* Reveal cho header */
+  const headerRef = useScrollReveal();
+
+  /* Reveal cho grid (stagger) */
+  const gridRef = useScrollReveal();
+
   return (
     <section id="genres" className="genres-section">
-      <div className="genres-header">
+      {/* ================= HEADER ================= */}
+      <div ref={headerRef} className="genres-header reveal">
         <h2>🎼 Thể loại</h2>
+        <p>Khám phá âm nhạc theo phong cách bạn yêu thích</p>
       </div>
 
-      <div className="genres-grid">
+      {/* ================= GRID ================= */}
+      <div ref={gridRef} className="genres-grid reveal-stagger">
         {GENRES.map((g) => (
           <div key={g.id} className={`genre-card ${g.color}`}>
             <div className="genre-bg-icon">{g.icon}</div>
+
             <div className="genre-content">
               <h3>{g.title}</h3>
               <span>{g.desc}</span>

@@ -1,5 +1,6 @@
 import { Play, Music } from "lucide-react";
 import "./HeroSection.css";
+import useScrollReveal from "../../hooks/useScrollReveal";
 
 /* Mock data – sau này thay bằng API playlist */
 const MOCK_PLAYLISTS = [
@@ -26,10 +27,16 @@ const MOCK_PLAYLISTS = [
 ];
 
 export default function HeroSection({ onStart }) {
+  /* Reveal cho phần text (trái) */
+  const leftRef = useScrollReveal();
+
+  /* Reveal cho group playlist (phải – stagger) */
+  const rightRef = useScrollReveal();
+
   return (
-    <section className="hero-mood">
-      {/* ===== LEFT: MOOD CONTENT ===== */}
-      <div className="hero-left">
+    <section id="hero" className="hero-mood hero-section">
+      {/* ================= LEFT ================= */}
+      <div ref={leftRef} className="hero-left reveal">
         <span className="hero-tag">🎧 Playlist theo tâm trạng</span>
 
         <h1>
@@ -54,8 +61,8 @@ export default function HeroSection({ onStart }) {
         </div>
       </div>
 
-      {/* ===== RIGHT: PLAYLIST CARDS ===== */}
-      <div className="hero-right">
+      {/* ================= RIGHT ================= */}
+      <div ref={rightRef} className="hero-right reveal-stagger">
         {MOCK_PLAYLISTS.map((playlist) => (
           <div key={playlist.id} className="playlist-card">
             <div className="playlist-cover">🎵</div>

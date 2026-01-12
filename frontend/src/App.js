@@ -24,11 +24,6 @@ const AppRoutes = () => {
         path="/play/:videoId"
         element={user ? <PlayerPage /> : <LandingPage />}
       />{" "}
-      {/* <Route path="/playlist/:id" element={<SharedPlaylist />} />
-      <Route path="/genres" element={<Genres />} />
-      <Route path="/trending" element={<Trending />} />
-      <Route path="/music-videos" element={<MusicVideos />} />
-      <Route path="/channels" element={<Channels />} /> */}
     </Routes>
   );
 };

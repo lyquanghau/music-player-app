@@ -8,6 +8,7 @@ import Recommendations from "./components/Recommendations";
 import { usePlaylist } from "./PlaylistContext";
 import LogoutButton from "./components/LogoutButton";
 import "./App.css";
+import "./assets/css/scroll-reveal.css";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
 

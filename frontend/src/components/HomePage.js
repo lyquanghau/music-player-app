@@ -6,6 +6,10 @@ import Header from "./layout/Header";
 import HeroSection from "./hero/HeroSection";
 import GenresSection from "./genres/GenresSection";
 import TrendingSection from "./trending/TrendingSection";
+import PlaylistsSection from "./playlists/PlaylistsSection";
+import MVSection from "./mv/MVSection";
+import ChannelsSection from "./channels/ChannelsSection";
+import Footer from "./footer/Footer";
 
 import api from "../api/api";
 import "../assets/css/HomePage.css";
@@ -99,11 +103,25 @@ const HomePage = () => {
       <HeroSection onStart={() => navigate("/trending")} />
 
       {/* ================= GENRES ================= */}
-      <HeroSection onStart={() => navigate("/trending")} />
       <GenresSection />
 
       {/* ================= TRENDING ================= */}
       <TrendingSection onPlay={(id) => navigate(`/play/${id}`)} />
+
+      {/* ================= PLAYLISTS ================= */}
+      <PlaylistsSection
+        playlists={playlists}
+        onOpen={(id) => navigate(`/playlist/${id}`)}
+        onPlay={(id) => navigate(`/playlist/${id}?autoplay=true`)}
+      />
+
+      {/* ================= MV ================= */}
+      <MVSection />
+
+      {/* ================= CHANNELS ================= */}
+      <ChannelsSection onOpen={(id) => navigate(`/channel/${id}`)} />
+
+      <Footer />
     </div>
   );
 };

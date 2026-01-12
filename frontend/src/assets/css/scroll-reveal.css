@@ -1,0 +1,40 @@
+/* trạng thái ban đầu */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+/* khi vào viewport */
+.reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* stagger cho list */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal-stagger.reveal-visible > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-stagger.reveal-visible > *:nth-child(1) {
+  transition-delay: 0.05s;
+}
+.reveal-stagger.reveal-visible > *:nth-child(2) {
+  transition-delay: 0.12s;
+}
+.reveal-stagger.reveal-visible > *:nth-child(3) {
+  transition-delay: 0.18s;
+}
+.reveal-stagger.reveal-visible > *:nth-child(4) {
+  transition-delay: 0.24s;
+}
+.reveal-stagger.reveal-visible > *:nth-child(5) {
+  transition-delay: 0.3s;
+}

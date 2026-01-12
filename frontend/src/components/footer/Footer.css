@@ -1,0 +1,138 @@
+.footer {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 64px 24px 32px;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 32px;
+}
+
+/* BRAND */
+.footer-brand .brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-name {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.brand-desc {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 12px 0 16px;
+}
+
+/* SOCIAL */
+.socials {
+  display: flex;
+  gap: 12px;
+}
+
+.socials button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.socials button:hover {
+  color: #38bdf8;
+}
+
+/* LIST */
+.footer h4 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.footer ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer li {
+  margin-bottom: 8px;
+}
+
+.footer a,
+.footer li button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.footer a:hover,
+.footer li button:hover {
+  color: #ffffff;
+}
+
+/* NEWSLETTER */
+.newsletter-desc {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.newsletter {
+  display: flex;
+  gap: 8px;
+}
+
+.newsletter input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  background: #020617;
+  color: #ffffff;
+}
+
+.newsletter button {
+  padding: 0 14px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* BOTTOM */
+.footer-bottom {
+  border-top: 1px solid #1f2937;
+  margin-top: 40px;
+  padding-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.footer-bottom span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.footer-bottom svg {
+  color: #ef4444;
+}
