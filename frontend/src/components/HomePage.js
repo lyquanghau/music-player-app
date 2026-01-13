@@ -1,9 +1,10 @@
+// components/HomePage.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlaylist } from "../PlaylistContext";
 
 import Header from "./layout/Header";
-import HeroSection from "./hero/HeroSection";
+import HeroDiscoverGrid from "./hero/HeroDiscoverGrid";
 import GenresSection from "./genres/GenresSection";
 import TrendingSection from "./trending/TrendingSection";
 import PlaylistsSection from "./playlists/PlaylistsSection";
@@ -14,57 +15,43 @@ import Footer from "./footer/Footer";
 import api from "../api/api";
 import "../assets/css/HomePage.css";
 
-const HomePage = () => {
+export default function HomePage() {
   const navigate = useNavigate();
   const { triggerPlaylistRefresh } = usePlaylist();
 
-  /* ================= LOGIC STATE (GIỮ NGUYÊN) ================= */
-  const [videoList, setVideoList] = useState([]);
+  /* ================= HERO DATA ================= */
+  const [searchResults, setSearchResults] = useState([]);
+  const [recommendedTracks, setRecommendedTracks] = useState([]);
+
+  /* ================= PLAYLIST ================= */
   const [playlists, setPlaylists] = useState([]);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [videoToAdd, setVideoToAdd] = useState(null);
-  const [notification, setNotification] = useState(null);
-  const [musicNotes, setMusicNotes] = useState([]);
 
-  /* ================= FETCH PLAYLIST (GIỮ LOGIC) ================= */
+  /* ================= FETCH PLAYLIST ================= */
   useEffect(() => {
-    const fetchPlaylists = async () => {
+    api
+      .get("/custom-playlists")
+      .then((res) => setPlaylists(res.data || []))
+      .catch(() => {});
+  }, []);
+
+  /* ================= FETCH HOME RECOMMEND ================= */
+  useEffect(() => {
+    const fetchHome = async () => {
       try {
-        const res = await api.get("/custom-playlists");
-        setPlaylists(res.data);
-      } catch {
-        setNotification({
-          message: "Không thể lấy playlist",
-          type: "error",
-        });
+        const res = await api.get("/home");
+        setRecommendedTracks(res.data || []);
+      } catch (err) {
+        console.error("Không lấy được gợi ý trang chủ", err);
+        setRecommendedTracks([]);
       }
     };
-    fetchPlaylists();
+
+    fetchHome();
   }, []);
 
-  /* ================= MUSIC NOTES (GIỮ LOGIC – KHÔNG RENDER) ================= */
-  useEffect(() => {
-    const notes = [];
-    const rows = 8;
-    const cols = 16;
-    const types = ["♪", "♫"];
-
-    for (let i = 0; i < rows * cols; i++) {
-      notes.push({
-        id: i,
-        x: ((i % cols) + 0.5) * (100 / cols),
-        y: (Math.floor(i / cols) + 0.5) * (100 / rows),
-        type: types[Math.floor(Math.random() * types.length)],
-      });
-    }
-    setMusicNotes(notes);
-  }, []);
-
-  /* ================= LOGIC HANDLERS (GIỮ NGUYÊN) ================= */
-  const handleSelectVideo = (videoId) => {
-    navigate(`/play/${videoId}`);
-  };
-
+  /* ================= PLAYLIST MODAL ================= */
   const handleOpenPlaylistModal = (videoId) => {
     setVideoToAdd(videoId);
     setShowPlaylistModal(true);
@@ -77,53 +64,52 @@ const HomePage = () => {
       });
       triggerPlaylistRefresh();
       setShowPlaylistModal(false);
-      setNotification({
-        message: "Đã thêm video!",
-        type: "success",
-      });
-    } catch {
-      setNotification({
-        message: "Thêm video thất bại",
-        type: "error",
-      });
-    }
+    } catch {}
   };
 
-  /* ================= RENDER (CHỈ HEADER + HERO) ================= */
   return (
     <div className="home-page">
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <Header
-        onSearchResult={setVideoList}
-        onSelectVideo={handleSelectVideo}
+        onSearchResult={setSearchResults}
         onAddToPlaylist={handleOpenPlaylistModal}
       />
 
-      {/* ================= HERO ================= */}
-      <HeroSection onStart={() => navigate("/trending")} />
+      {/* tránh header fixed che hero */}
+      <div style={{ paddingTop: 80 }}>
+        <HeroDiscoverGrid
+          tracks={searchResults.length > 0 ? searchResults : recommendedTracks}
+        />
+      </div>
 
-      {/* ================= GENRES ================= */}
+      {/* CONTENT */}
       <GenresSection />
-
-      {/* ================= TRENDING ================= */}
-      <TrendingSection onPlay={(id) => navigate(`/play/${id}`)} />
-
-      {/* ================= PLAYLISTS ================= */}
+      <TrendingSection />
       <PlaylistsSection
         playlists={playlists}
         onOpen={(id) => navigate(`/playlist/${id}`)}
         onPlay={(id) => navigate(`/playlist/${id}?autoplay=true`)}
       />
-
-      {/* ================= MV ================= */}
       <MVSection />
-
-      {/* ================= CHANNELS ================= */}
       <ChannelsSection onOpen={(id) => navigate(`/channel/${id}`)} />
-
       <Footer />
+
+      {/* PLAYLIST MODAL */}
+      {showPlaylistModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Chọn playlist</h3>
+            <ul>
+              {playlists.map((p) => (
+                <li key={p._id} onClick={() => handleAddToPlaylist(p._id)}>
+                  {p.name} ({p.videos.length})
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setShowPlaylistModal(false)}>Đóng</button>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default HomePage;
+}

@@ -8,6 +8,7 @@ const CustomPlaylist = require("../models/CustomPlaylist");
 
 const verifyJWT = require("../middleware/verifyJWT");
 const checkApiKey = require("../middleware/checkApiKey");
+const { getTrendingMusicFromYoutube } = require("../services/youtube.service");
 
 const router = express.Router();
 
@@ -323,6 +324,20 @@ router.delete("/history", verifyJWT, async (req, res) => {
     res.status(500).json({
       message: "Không thể xóa lịch sử",
     });
+  }
+});
+
+router.get("/home", async (req, res) => {
+  try {
+    const videos = await getTrendingMusicFromYoutube();
+
+    // 🎯 Lọc nhạc < 7 phút
+    const filtered = videos.filter((v) => v.duration <= 420);
+
+    res.json(filtered.slice(0, 12));
+  } catch (err) {
+    console.error("HOME API ERROR:", err.message);
+    res.status(500).json([]);
   }
 });
 

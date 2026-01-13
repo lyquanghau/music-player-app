@@ -1,13 +1,15 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-// import MainApp from "./MainApp"; // Trang nghe nhạc chính
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import HomePage from "./components/HomePage";
-// import SharedPlaylist from "./components/SharedPlaylist";
 import LandingPage from "./components/LandingPage";
 import SignUpPage from "./components/SignUpPage";
-import PlayerPage from "./components/PlayerPage"; // Thêm PlayerPage
+
 import { AuthProvider, useAuth } from "./AuthContext";
 import { PlaylistProvider } from "./PlaylistContext";
+import { PlayerProvider } from "./context/PlayerContext";
+
+import PlayerPage from "./components/PlayerPage";
+import StickyPlayer from "./components/player/StickyPlayer";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -16,28 +18,28 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/register" element={<SignUpPage />} />
-      <Route
-        path="/home"
-        element={user ? <HomePage /> : <LandingPage />}
-      />{" "}
-      <Route
-        path="/play/:videoId"
-        element={user ? <PlayerPage /> : <LandingPage />}
-      />{" "}
+      <Route path="/home" element={user ? <HomePage /> : <LandingPage />} />
     </Routes>
   );
 };
 
-function App() {
+export default function App() {
   return (
-    <AuthProvider>
-      <PlaylistProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
-      </PlaylistProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <PlaylistProvider>
+          <PlayerProvider>
+            {/* ROUTES */}
+            <AppRoutes />
+
+            {/* ENGINE – ẨN */}
+            <PlayerPage />
+
+            {/* STICKY PLAYER */}
+            <StickyPlayer />
+          </PlayerProvider>
+        </PlaylistProvider>
+      </AuthProvider>
+    </Router>
   );
 }
-
-export default App;

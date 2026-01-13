@@ -5,6 +5,7 @@
   margin: 0;
   position: relative;
   overflow: hidden;
+  padding-top: 9px;
 }
 
 .home-page::before {
