@@ -11,7 +11,7 @@ app.use(express.json());
 
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? ["https://your-frontend.vercel.app"]
+    ? ["https://sky-music-lyquanghau.vercel.app/"]
     : ["http://localhost:6704"];
 
 app.use(
