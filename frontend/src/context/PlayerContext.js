@@ -4,74 +4,87 @@ import React, {
   useRef,
   useState,
   useCallback,
+  useEffect,
 } from "react";
 
 const PlayerContext = createContext(null);
 
 export const PlayerProvider = ({ children }) => {
   const playerRef = useRef(null);
-
   const [currentTrack, setCurrentTrack] = useState(null);
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
-  const [repeatMode, setRepeatMode] = useState("all"); // all | one
+  const [repeatMode, setRepeatMode] = useState("off"); // off | all | one
   const [shuffle, setShuffle] = useState(false);
-
   const [volume, setVolume] = useState(80);
   const [muted, setMuted] = useState(false);
+  const [likedTracks, setLikedTracks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("likedTracks")) || [];
+    } catch {
+      return [];
+    }
+  });
 
-  /* ================= PLAYER INSTANCE ================= */
+  // QUAN TRỌNG: Cập nhật thời gian thực từ Player
+  useEffect(() => {
+    let interval;
+    if (isPlaying && playerRef.current) {
+      interval = setInterval(() => {
+        // Lấy thời gian hiện tại từ YouTube Player API
+        const time = playerRef.current.getCurrentTime();
+        const dur = playerRef.current.getDuration();
+
+        if (time !== undefined) setCurrentTime(time);
+        if (dur !== undefined && dur !== duration) setDuration(dur);
+      }, 500); // Cập nhật mỗi 0.5 giây để mượt mà
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, duration]);
+
   const setPlayerInstance = (player) => {
     playerRef.current = player;
-    player.setVolume(volume);
   };
 
-  /* ================= PLAY TRACK ================= */
   const playTrack = useCallback((track, list = []) => {
     setCurrentTrack(track);
     setIsPlaying(true);
-
     if (list.length) {
       setQueue(list);
-      const index = list.findIndex((t) => t.id === track.id);
-      setCurrentIndex(index >= 0 ? index : 0);
+      setCurrentIndex(list.findIndex((t) => t.id === track.id) || 0);
     }
   }, []);
 
-  /* ================= TOGGLE PLAY ================= */
   const togglePlay = () => {
     if (!playerRef.current) return;
-
     if (isPlaying) {
       playerRef.current.pauseVideo();
+      setIsPlaying(false);
     } else {
       playerRef.current.playVideo();
+      setIsPlaying(true);
     }
-    setIsPlaying((p) => !p);
   };
 
-  /* ================= SEEK ================= */
   const seekTo = (time) => {
     if (!playerRef.current) return;
     playerRef.current.seekTo(time, true);
     setCurrentTime(time);
   };
 
-  /* ================= NEXT ================= */
-  const playNext = () => {
+  const playNext = useCallback(() => {
     if (!queue.length) return;
-
     if (repeatMode === "one") {
       seekTo(0);
-      playerRef.current.playVideo();
+      playerRef.current?.playVideo();
       return;
     }
-
     let nextIndex = shuffle
       ? Math.floor(Math.random() * queue.length)
       : (currentIndex + 1) % queue.length;
@@ -79,37 +92,39 @@ export const PlayerProvider = ({ children }) => {
     setCurrentIndex(nextIndex);
     setCurrentTrack(queue[nextIndex]);
     setIsPlaying(true);
-  };
+  }, [queue, currentIndex, shuffle, repeatMode]);
 
-  /* ================= PREV ================= */
   const playPrev = () => {
     if (!queue.length) return;
-
     const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
-
     setCurrentIndex(prevIndex);
     setCurrentTrack(queue[prevIndex]);
     setIsPlaying(true);
   };
 
-  /* ================= VOLUME ================= */
   const changeVolume = (v) => {
     setVolume(v);
-    if (playerRef.current) {
-      playerRef.current.setVolume(v);
-    }
-    if (v > 0) setMuted(false);
+    if (playerRef.current) playerRef.current.setVolume(v);
   };
 
   const toggleMute = () => {
     if (!playerRef.current) return;
     if (muted) {
       playerRef.current.unMute();
-      playerRef.current.setVolume(volume);
     } else {
       playerRef.current.mute();
     }
-    setMuted((m) => !m);
+    setMuted(!muted);
+  };
+
+  const toggleLike = (trackId) => {
+    setLikedTracks((prev) => {
+      const next = prev.includes(trackId)
+        ? prev.filter((id) => id !== trackId)
+        : [...prev, trackId];
+      localStorage.setItem("likedTracks", JSON.stringify(next));
+      return next;
+    });
   };
 
   return (
@@ -123,21 +138,21 @@ export const PlayerProvider = ({ children }) => {
         shuffle,
         volume,
         muted,
-
         playTrack,
         togglePlay,
         playNext,
         playPrev,
         seekTo,
-
         setDuration,
         setCurrentTime,
         setRepeatMode,
         setShuffle,
-
         setPlayerInstance,
         changeVolume,
         toggleMute,
+        toggleLike,
+        isLiked: (id) => likedTracks.includes(id),
+        setIsPlaying,
       }}
     >
       {children}
