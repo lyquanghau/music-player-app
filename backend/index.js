@@ -6,19 +6,21 @@ const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 8404;
 
-const trendingRoutes = require("./routes/trending");
-const fetchTrending = require("./jobs/fetchTrending");
-
 // ===== MIDDLEWARE =====
 app.use(express.json());
+
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? ["https://your-frontend.vercel.app"]
+    : ["http://localhost:6704"];
+
 app.use(
   cors({
-    origin: "http://localhost:6704",
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-app.options("*", cors());
 
 // ===== DB =====
 connectDB();
@@ -28,20 +30,18 @@ app.get("/", (req, res) => {
   res.send("Welcome to Music Player Backend - YouTube Version");
 });
 
-app.use("/api/trending", trendingRoutes); // ✅ FIXED
+app.use("/api/trending", require("./routes/trending"));
+app.use("/api", require("./routes/api"));
+app.use("/", require("./routes/public"));
+app.use("/api/auth", require("./routes/auth"));
 
-const apiRoutes = require("./routes/api");
-const publicRoutes = require("./routes/public");
-const authRoutes = require("./routes/auth");
-
-app.use("/api", apiRoutes);
-app.use("/", publicRoutes);
-app.use("/api/auth", authRoutes);
-
-// ===== FETCH TRENDING =====
-fetchTrending();
+// ===== JOB =====
+if (process.env.NODE_ENV === "production") {
+  const fetchTrending = require("./jobs/fetchTrending");
+  fetchTrending();
+}
 
 // ===== START SERVER =====
 app.listen(port, () => {
-  console.log(`Server chạy trên http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
