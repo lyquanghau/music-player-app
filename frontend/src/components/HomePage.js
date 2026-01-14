@@ -19,8 +19,12 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { triggerPlaylistRefresh } = usePlaylist();
 
-  /* ================= HERO DATA ================= */
+  /* ================= SEARCH ================= */
+  // const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  // const [searchLoading, setSearchLoading] = useState(false);
+
+  /* ================= HERO ================= */
   const [recommendedTracks, setRecommendedTracks] = useState([]);
 
   /* ================= PLAYLIST ================= */
@@ -42,12 +46,10 @@ export default function HomePage() {
       try {
         const res = await api.get("/home");
         setRecommendedTracks(res.data || []);
-      } catch (err) {
-        console.error("Không lấy được gợi ý trang chủ", err);
+      } catch {
         setRecommendedTracks([]);
       }
     };
-
     fetchHome();
   }, []);
 
@@ -69,16 +71,17 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
-      {/* HEADER */}
+      {/* HEADER (SEARCH INPUT) */}
       <Header
         onSearchResult={setSearchResults}
         onAddToPlaylist={handleOpenPlaylistModal}
       />
 
-      {/* tránh header fixed che hero */}
+      {/* HERO */}
       <div style={{ paddingTop: 80 }}>
         <HeroDiscoverGrid
-          tracks={searchResults.length > 0 ? searchResults : recommendedTracks}
+          tracks={recommendedTracks}
+          searchResults={searchResults}
         />
       </div>
 

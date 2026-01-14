@@ -21,10 +21,19 @@ axiosRetry(axios, {
   retryDelay: axiosRetry.exponentialDelay,
 });
 
+/* ===================== HELPERS ===================== */
+
+function parseDurationToSeconds(iso = "") {
+  const match = iso.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
+  const minutes = parseInt(match?.[1] || 0);
+  const seconds = parseInt(match?.[2] || 0);
+  return minutes * 60 + seconds;
+}
+
 /* ===================== SEARCH ===================== */
 /**
- * GET /api/search?q=
- * Public (có API key)
+ * GET /api/search?q=...
+ * Public
  */
 router.get("/search", checkApiKey, async (req, res) => {
   const query = req.query.q?.trim();
@@ -40,34 +49,66 @@ router.get("/search", checkApiKey, async (req, res) => {
   if (cached) return res.json(cached);
 
   try {
-    const { data } = await axios.get(
+    // 1️⃣ SEARCH → lấy videoId
+    const searchRes = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
       {
         params: {
           part: "snippet",
           q: query,
           type: "video",
-          maxResults: 10,
+          maxResults: 15,
           key: process.env.YOUTUBE_API_KEY,
         },
       }
     );
 
-    const items = data.items
-      .filter((item) => item.id?.videoId)
-      .map((item) => ({
-        id: item.id.videoId,
-        title: item.snippet.title,
-        channel: item.snippet.channelTitle,
-        thumbnail: item.snippet.thumbnails?.default?.url || "",
-      }));
+    const videoIds = searchRes.data.items
+      .map((i) => i.id?.videoId)
+      .filter(Boolean);
+
+    if (videoIds.length === 0) {
+      return res.json({ items: [] });
+    }
+
+    // 2️⃣ VIDEOS → lấy duration
+    const videosRes = await axios.get(
+      "https://www.googleapis.com/youtube/v3/videos",
+      {
+        params: {
+          part: "snippet,contentDetails",
+          id: videoIds.join(","),
+          key: process.env.YOUTUBE_API_KEY,
+        },
+      }
+    );
+
+    // 3️⃣ MAP + FILTER < 7 PHÚT
+    const items = videosRes.data.items
+      .map((v) => {
+        const duration = parseDurationToSeconds(
+          v.contentDetails?.duration || ""
+        );
+
+        return {
+          id: v.id,
+          title: v.snippet.title,
+          channel: v.snippet.channelTitle,
+          thumbnail:
+            v.snippet.thumbnails?.medium?.url ||
+            v.snippet.thumbnails?.default?.url ||
+            "",
+          duration, // seconds
+        };
+      })
+      .filter((v) => v.duration > 0 && v.duration <= 420); // 🎯 < 7 phút
 
     const response = { items };
     youtubeCache.set(cacheKey, response);
 
     res.json(response);
   } catch (err) {
-    console.error("YouTube search error:", err.message);
+    console.error("YouTube search error:", err.response?.data || err.message);
     res.status(500).json({
       message: "Không thể tìm kiếm video",
     });
@@ -75,6 +116,7 @@ router.get("/search", checkApiKey, async (req, res) => {
 });
 
 /* ===================== PLAYLIST ===================== */
+
 /**
  * POST /api/custom-playlists
  * Private
@@ -133,7 +175,7 @@ router.get("/custom-playlists", verifyJWT, async (req, res) => {
 
 /**
  * POST /api/custom-playlists/:id/add-video
- * Private (owner only)
+ * Private
  */
 router.post("/custom-playlists/:id/add-video", verifyJWT, async (req, res) => {
   const { id } = req.params;
@@ -157,9 +199,7 @@ router.post("/custom-playlists/:id/add-video", verifyJWT, async (req, res) => {
       });
     }
 
-    const exists = playlist.videos.some((v) => String(v) === videoId);
-
-    if (!exists) {
+    if (!playlist.videos.includes(videoId)) {
       playlist.videos.push(videoId);
       await playlist.save();
     }
@@ -174,50 +214,8 @@ router.post("/custom-playlists/:id/add-video", verifyJWT, async (req, res) => {
 });
 
 /**
- * POST /api/custom-playlists/:id/remove-video
- * Private (owner only)
- */
-router.post(
-  "/custom-playlists/:id/remove-video",
-  verifyJWT,
-  async (req, res) => {
-    const { id } = req.params;
-    const videoId = String(req.body.videoId || "").trim();
-
-    if (!videoId) {
-      return res.status(400).json({
-        message: "videoId là bắt buộc",
-      });
-    }
-
-    try {
-      const playlist = await CustomPlaylist.findOne({
-        _id: id,
-        userId: req.user.id,
-      });
-
-      if (!playlist) {
-        return res.status(404).json({
-          message: "Playlist không tồn tại",
-        });
-      }
-
-      playlist.videos = playlist.videos.filter((v) => String(v) !== videoId);
-
-      await playlist.save();
-      res.json(playlist);
-    } catch (err) {
-      console.error("Remove video error:", err);
-      res.status(500).json({
-        message: "Không thể xóa video",
-      });
-    }
-  }
-);
-
-/**
  * DELETE /api/custom-playlists/:id
- * Private (owner only)
+ * Private
  */
 router.delete("/custom-playlists/:id", verifyJWT, async (req, res) => {
   try {
@@ -232,9 +230,7 @@ router.delete("/custom-playlists/:id", verifyJWT, async (req, res) => {
       });
     }
 
-    res.json({
-      message: "Đã xóa playlist thành công",
-    });
+    res.json({ message: "Đã xóa playlist thành công" });
   } catch (err) {
     console.error("Delete playlist error:", err);
     res.status(500).json({
@@ -243,10 +239,11 @@ router.delete("/custom-playlists/:id", verifyJWT, async (req, res) => {
   }
 });
 
+/* ===================== SEARCH HISTORY ===================== */
+
 // POST /api/history
 router.post("/history", verifyJWT, async (req, res) => {
   const query = req.body.query?.trim();
-  const type = req.body.type || "youtube";
 
   if (!query) {
     return res.status(400).json({
@@ -257,7 +254,7 @@ router.post("/history", verifyJWT, async (req, res) => {
   try {
     const history = await SearchHistory.create({
       query,
-      type,
+      type: "youtube",
       userId: req.user.id,
     });
 
@@ -288,29 +285,6 @@ router.get("/history", verifyJWT, async (req, res) => {
   }
 });
 
-// DELETE /api/history/:id
-router.delete("/history/:id", verifyJWT, async (req, res) => {
-  try {
-    const deleted = await SearchHistory.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id,
-    });
-
-    if (!deleted) {
-      return res.status(404).json({
-        message: "History không tồn tại",
-      });
-    }
-
-    res.sendStatus(204);
-  } catch (err) {
-    console.error("Delete history error:", err);
-    res.status(500).json({
-      message: "Không thể xóa history",
-    });
-  }
-});
-
 // DELETE /api/history
 router.delete("/history", verifyJWT, async (req, res) => {
   try {
@@ -327,13 +301,12 @@ router.delete("/history", verifyJWT, async (req, res) => {
   }
 });
 
+/* ===================== HOME / TRENDING ===================== */
+
 router.get("/home", async (req, res) => {
   try {
     const videos = await getTrendingMusicFromYoutube();
-
-    // 🎯 Lọc nhạc < 7 phút
     const filtered = videos.filter((v) => v.duration <= 420);
-
     res.json(filtered.slice(0, 12));
   } catch (err) {
     console.error("HOME API ERROR:", err.message);

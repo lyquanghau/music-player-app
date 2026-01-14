@@ -30,6 +30,9 @@ export const PlayerProvider = ({ children }) => {
     }
   });
 
+  const [showMV, setShowMV] = useState(false);
+  const [isMVMode, setIsMVMode] = useState(false);
+
   // QUAN TRỌNG: Cập nhật thời gian thực từ Player
   useEffect(() => {
     let interval;
@@ -153,6 +156,10 @@ export const PlayerProvider = ({ children }) => {
         toggleLike,
         isLiked: (id) => likedTracks.includes(id),
         setIsPlaying,
+        setShowMV,
+        showMV,
+        isMVMode,
+        setIsMVMode,
       }}
     >
       {children}

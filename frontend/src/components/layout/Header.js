@@ -5,7 +5,7 @@ import SearchComponent from "../Search";
 import logo from "../../assets/logo.png";
 import "../../assets/css/Header.css";
 
-/* ================= MENU CONFIG (1 NGUỒN DUY NHẤT) ================= */
+/* ================= MENU CONFIG ================= */
 const MENU_ITEMS = [
   { id: "hero", label: "Trang chủ" },
   { id: "genres", label: "Thể loại" },
@@ -16,9 +16,9 @@ const MENU_ITEMS = [
 ];
 
 export default function Header({
-  onSearchResult,
-  onSelectVideo,
-  onAddToPlaylist,
+  onSearchResult, // ✅ dùng cho search
+  onSelectVideo, // ✅ GIỮ NGUYÊN
+  onAddToPlaylist, // ✅ GIỮ NGUYÊN
 }) {
   const navigate = useNavigate();
 
@@ -28,9 +28,7 @@ export default function Header({
 
   /* ================= HEADER SCROLL EFFECT ================= */
   useEffect(() => {
-    const onScroll = () => {
-      setIsScrolled(window.scrollY > 40);
-    };
+    const onScroll = () => setIsScrolled(window.scrollY > 40);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -38,8 +36,7 @@ export default function Header({
   /* ================= SCROLL SPY ================= */
   useEffect(() => {
     const handleScrollSpy = () => {
-      const scrollPos = window.scrollY + 120; // offset header
-
+      const scrollPos = window.scrollY + 120;
       for (let i = MENU_ITEMS.length - 1; i >= 0; i--) {
         const section = document.getElementById(MENU_ITEMS[i].id);
         if (section && section.offsetTop <= scrollPos) {
@@ -48,18 +45,15 @@ export default function Header({
         }
       }
     };
-
     window.addEventListener("scroll", handleScrollSpy);
-    handleScrollSpy(); // chạy lần đầu
+    handleScrollSpy();
     return () => window.removeEventListener("scroll", handleScrollSpy);
   }, []);
 
   /* ================= SCROLL TO SECTION ================= */
   const scrollTo = (id) => {
     const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     setIsMobileMenuOpen(false);
   };
 
@@ -76,7 +70,7 @@ export default function Header({
       }`}
     >
       <nav className="header-nav">
-        {/* ================= LOGO ================= */}
+        {/* LOGO */}
         <div
           className="header-logo"
           onClick={() => scrollTo("hero")}
@@ -85,7 +79,7 @@ export default function Header({
           <img src={logo} alt="Sky Music" className="header-logo-img" />
         </div>
 
-        {/* ================= DESKTOP MENU ================= */}
+        {/* DESKTOP MENU */}
         <div className="header-menu">
           {MENU_ITEMS.map((item) => (
             <button
@@ -98,7 +92,7 @@ export default function Header({
           ))}
         </div>
 
-        {/* ================= ACTIONS ================= */}
+        {/* ACTIONS */}
         <div className="header-actions">
           <SearchComponent
             variant="header"
@@ -125,7 +119,7 @@ export default function Header({
         </div>
       </nav>
 
-      {/* ================= MOBILE MENU ================= */}
+      {/* MOBILE MENU */}
       {isMobileMenuOpen && (
         <div className="header-mobile-menu">
           <SearchComponent

@@ -2,11 +2,26 @@ import { Play } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import "./HeroDiscoverGrid.css";
 
-export default function HeroDiscoverGrid({ tracks = [] }) {
-  const { playTrack } = usePlayer();
+/* ===================== HELPERS ===================== */
+const formatDuration = (seconds = 0) => {
+  if (!seconds || isNaN(seconds)) return "";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+};
+
+export default function HeroDiscoverGrid({
+  tracks = [], // HERO LEFT: trending / recommended
+  searchResults = [], // HERO RIGHT: search results
+}) {
+  const { playTrack, currentTrack, isPlaying } = usePlayer();
+
+  const isPlayingTrack = (id) =>
+    currentTrack && currentTrack.id === id && isPlaying;
 
   return (
     <section id="hero" className="hero-discover">
+      {/* ================= LEFT: TRENDING ================= */}
       <div className="hero-left">
         <div className="hero-header">
           <h2>🔥 Những bài hát thịnh hành</h2>
@@ -30,6 +45,7 @@ export default function HeroDiscoverGrid({ tracks = [] }) {
                     <div className="track-placeholder">🎵</div>
                   )}
 
+                  {/* ▶ PLAY BUTTON */}
                   <button
                     className="track-play"
                     onClick={(e) => {
@@ -39,6 +55,13 @@ export default function HeroDiscoverGrid({ tracks = [] }) {
                   >
                     <Play size={16} />
                   </button>
+
+                  {/* ⏱ DURATION */}
+                  {t.duration && (
+                    <span className="track-duration">
+                      {formatDuration(t.duration)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="track-meta">
@@ -55,11 +78,56 @@ export default function HeroDiscoverGrid({ tracks = [] }) {
         )}
       </div>
 
+      {/* ================= RIGHT: SEARCH ================= */}
       <div className="hero-right">
-        <div className="hero-empty">
-          <span>🔍</span>
-          <p>Tìm kiếm bài hát, nghệ sĩ hoặc playlist</p>
-        </div>
+        {searchResults.length === 0 ? (
+          <div className="hero-empty">
+            <span>🔍</span>
+            <p>Tìm kiếm bài hát, nghệ sĩ hoặc playlist</p>
+          </div>
+        ) : (
+          <div className="hero-search-list">
+            {searchResults.map((item) => (
+              <div
+                key={item.id}
+                className={`hero-search-item ${
+                  isPlayingTrack(item.id) ? "playing" : ""
+                }`}
+                onClick={() => playTrack(item, searchResults)}
+              >
+                <div className="hero-search-thumb-wrap">
+                  <img
+                    src={item.thumbnail}
+                    alt={item.title}
+                    className="hero-search-thumb"
+                  />
+                </div>
+
+                <div className="hero-search-info">
+                  <div className="hero-search-title" title={item.title}>
+                    {item.title}
+                  </div>
+                  <div
+                    className="hero-search-channel"
+                    title={`${item.channel} | ${formatDuration(item.duration)}`}
+                  >
+                    {item.channel}
+                    {item.duration && (
+                      <span className="hero-search-separator">
+                        {" "}
+                        | {formatDuration(item.duration)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {isPlayingTrack(item.id) && (
+                  <span className="hero-search-playing">▶</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

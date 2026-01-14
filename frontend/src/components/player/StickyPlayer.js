@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Play,
   Pause,
@@ -11,19 +10,19 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
 import "./StickyPlayer.css";
 
-const formatTime = (seconds) => {
-  if (!seconds) return "0:00";
+const formatTime = (seconds = 0) => {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 
 export default function StickyPlayer() {
-  const navigate = useNavigate();
+  const location = useLocation();
+
   const {
     currentTrack,
     isPlaying,
@@ -43,10 +42,21 @@ export default function StickyPlayer() {
     changeVolume,
     toggleLike,
     isLiked,
+    setShowMV,
+    setIsMVMode,
+    isMVMode,
   } = usePlayer();
 
-  if (!currentTrack) return null;
+  /* =====================================================
+     GUARD: KHÔNG RENDER TRONG CÁC TRƯỜNG HỢP
+  ===================================================== */
+  if (!currentTrack || location.pathname === "/" || isMVMode) {
+    return null;
+  }
 
+  /* =====================================================
+     HANDLERS
+  ===================================================== */
   const handleRepeatClick = () => {
     if (repeatMode === "off") setRepeatMode("all");
     else if (repeatMode === "all") setRepeatMode("one");
@@ -55,9 +65,12 @@ export default function StickyPlayer() {
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  /* =====================================================
+     RENDER
+  ===================================================== */
   return (
     <div className="sticky-player-container">
-      {/* 1. PROGRESS BAR AREA - Nằm tuyệt đối ở đỉnh */}
+      {/* ===== PROGRESS ===== */}
       <div className="sticky-progress-wrapper">
         <input
           type="range"
@@ -76,15 +89,21 @@ export default function StickyPlayer() {
         </div>
       </div>
 
-      {/* 2. PLAYER BODY - Chia 3 cột bằng Grid */}
+      {/* ===== MAIN BODY ===== */}
       <div className="player-main-body">
-        {/* LEFT: INFO & LIKE */}
+        {/* ================= LEFT ================= */}
         <div className="body-left">
-          <img src={currentTrack.thumbnail} alt="" className="player-thumb" />
+          <img
+            src={currentTrack.thumbnail}
+            alt={currentTrack.title}
+            className="player-thumb"
+          />
+
           <div className="track-meta">
             <div className="track-name">{currentTrack.title}</div>
             <div className="track-channel">{currentTrack.channel}</div>
           </div>
+
           <button
             className={`like-btn-sticky ${
               isLiked(currentTrack.id) ? "active" : ""
@@ -98,7 +117,7 @@ export default function StickyPlayer() {
           </button>
         </div>
 
-        {/* CENTER: CONTROLS */}
+        {/* ================= CENTER ================= */}
         <div className="body-center">
           <div className="control-buttons">
             <button
@@ -112,36 +131,30 @@ export default function StickyPlayer() {
               ) : (
                 <Repeat size={18} />
               )}
-              {/* <span className={`mode-dot ${repeatMode}`} /> */}
             </button>
 
             <button className="sub-btn" onClick={playPrev}>
               <SkipBack size={20} />
             </button>
-            <button className="main-play-btn" onClick={togglePlay}>
+
+            {/* 🔒 CHẶN AUDIO TUYỆT ĐỐI KHI MV MODE */}
+            <button
+              className="main-play-btn"
+              onClick={() => {
+                if (isMVMode) return;
+                togglePlay();
+              }}
+            >
               {isPlaying ? (
                 <Pause size={24} fill="white" />
               ) : (
                 <Play size={24} fill="white" />
               )}
             </button>
+
             <button className="sub-btn" onClick={playNext}>
               <SkipForward size={20} />
             </button>
-
-            {/* <button
-              className={`sub-btn repeat-btn ${
-                repeatMode !== "off" ? "active" : ""
-              }`}
-              onClick={handleRepeatClick}
-            >
-              {repeatMode === "one" ? (
-                <Repeat1 size={18} />
-              ) : (
-                <Repeat size={18} />
-              )}
-              <span className={`mode-dot ${repeatMode}`} />
-            </button> */}
 
             <button
               className={`sub-btn ${shuffle ? "active" : ""}`}
@@ -152,7 +165,7 @@ export default function StickyPlayer() {
           </div>
         </div>
 
-        {/* RIGHT: VOLUME & MV */}
+        {/* ================= RIGHT ================= */}
         <div className="body-right">
           <div className="volume-section">
             <button className="sub-btn" onClick={toggleMute}>
@@ -162,6 +175,7 @@ export default function StickyPlayer() {
                 <Volume2 size={18} />
               )}
             </button>
+
             <input
               type="range"
               min="0"
@@ -171,9 +185,26 @@ export default function StickyPlayer() {
               className="volume-range"
             />
           </div>
+
+          {/* ================= MV BUTTON ================= */}
           <button
             className="btn-go-mv"
-            onClick={() => navigate(`/play/${currentTrack.id}?mv=true`)}
+            onClick={() => {
+              // ⏸ TẮT AUDIO NGAY LẬP TỨC
+              if (isPlaying) togglePlay(false);
+
+              // 🎬 VÀO MV MODE
+              setIsMVMode(true);
+              setShowMV(true);
+
+              // 📍 SCROLL XUỐNG MV
+              setTimeout(() => {
+                const el = document.getElementById("mv");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth" });
+                }
+              }, 100);
+            }}
           >
             MV
           </button>

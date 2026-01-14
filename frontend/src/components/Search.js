@@ -1,15 +1,13 @@
 import React, { useState, useMemo, useCallback } from "react";
-import axios from "axios";
 import { IoSearch, IoArrowForward, IoClose } from "react-icons/io5";
 import { FaArrowTrendUp } from "react-icons/fa6";
 
 import "../assets/css/Search.css";
 import useSearchHistory from "../hooks/useSearchHistory";
 import { useAuth } from "../AuthContext";
+import api from "../api/api";
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8404";
-
-/* ===================== UTILS ===================== */
+/* ===================== DEBOUNCE ===================== */
 const debounce = (fn, delay = 500) => {
   let timer;
   return (...args) => {
@@ -18,61 +16,45 @@ const debounce = (fn, delay = 500) => {
   };
 };
 
-/* ===================== COMPONENT ===================== */
-const Search = ({
-  setVideoList,
-  variant = "default", // 👈 default | header
-}) => {
+const Search = ({ setVideoList, variant = "default" }) => {
   const { token } = useAuth();
   const { history, saveHistory, deleteHistory, clearHistory } =
     useSearchHistory(token);
 
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState(false);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   /* ===================== SEARCH LOGIC ===================== */
   const performSearch = useCallback(
     async (text) => {
       const q = text.trim();
 
+      // ❗ chỉ search khi >= 2 ký tự
       if (q.length < 2) {
-        setError("Nhập ít nhất 2 ký tự");
+        setLoading(false);
         return;
       }
 
-      setError("");
       setLoading(true);
+      setError("");
 
       try {
-        const cacheKey = `search_${q}`;
-        const cached = localStorage.getItem(cacheKey);
-
-        if (cached) {
-          const { items, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < 600000) {
-            setVideoList(items);
-            setLoading(false);
-            return;
-          }
-        }
-
-        const res = await axios.get(`${API_BASE}/api/search`, {
+        // 👉 GỌI ĐÚNG AXIOS INSTANCE (baseURL = /api)
+        const res = await api.get("/search", {
           params: { q },
         });
 
-        const items = res.data.items || [];
-        setVideoList(items);
+        const items = res.data?.items || [];
 
-        localStorage.setItem(
-          cacheKey,
-          JSON.stringify({ items, timestamp: Date.now() })
-        );
+        setVideoList(items);
 
         if (token) saveHistory(q);
       } catch (err) {
-        setError(err.response?.data?.message || "Không thể tìm kiếm");
+        console.error("Search error:", err);
+        setError("Không thể tìm kiếm");
+        setVideoList([]);
       } finally {
         setLoading(false);
       }
@@ -85,27 +67,31 @@ const Search = ({
     [performSearch]
   );
 
-  /* ===================== EVENTS ===================== */
-  const handleSubmit = () => {
-    setExpanded(false);
-    performSearch(query);
+  /* ===================== INPUT HANDLER ===================== */
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+
+    // clear kết quả khi input rỗng
+    if (!value.trim()) {
+      setVideoList([]);
+      setLoading(false);
+      setError("");
+      return;
+    }
+
+    debouncedSearch(value);
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSubmit();
+  const handleSubmit = () => {
+    performSearch(query);
   };
 
   const handleHistoryClick = (text) => {
     setQuery(text);
-    setExpanded(false);
     performSearch(text);
+    setExpanded(false);
   };
-
-  const uniqueHistory = useMemo(() => {
-    const map = new Map();
-    history.forEach((h) => map.set(h.query.toLowerCase(), h));
-    return Array.from(map.values());
-  }, [history]);
 
   /* ===================== RENDER ===================== */
   return (
@@ -117,13 +103,9 @@ const Search = ({
           type="text"
           placeholder="Tìm bài hát, nghệ sĩ, playlist..."
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            debouncedSearch(e.target.value);
-          }}
+          onChange={handleChange}
           onFocus={() => setExpanded(true)}
           onBlur={() => setTimeout(() => setExpanded(false), 150)}
-          onKeyDown={handleKeyDown}
         />
 
         <button className="search-submit" onClick={handleSubmit}>
@@ -131,15 +113,17 @@ const Search = ({
         </button>
       </div>
 
-      {/* ERROR / LOADING */}
-      {expanded && (error || loading) && (
-        <div className="search-status">{loading ? "Searching..." : error}</div>
+      {/* STATUS */}
+      {expanded && (loading || error) && (
+        <div className="search-status">
+          {loading ? "Đang tìm kiếm..." : error}
+        </div>
       )}
 
-      {/* HISTORY */}
-      {expanded && token && uniqueHistory.length > 0 && (
+      {/* SEARCH HISTORY */}
+      {expanded && token && history.length > 0 && (
         <div className="search-dropdown">
-          {uniqueHistory.map((item) => (
+          {history.map((item) => (
             <div
               key={item._id}
               className="dropdown-item"
