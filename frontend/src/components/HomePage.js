@@ -1,4 +1,3 @@
-// components/HomePage.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlaylist } from "../PlaylistContext";
@@ -15,17 +14,29 @@ import Footer from "./footer/Footer";
 import api from "../api/api";
 import "../assets/css/HomePage.css";
 
+/* ================= GENRE → QUERY MAP ================= */
+const GENRE_QUERY_MAP = {
+  Pop: "pop music vietnam",
+  Ballad: "vietnamese ballad song",
+  "Rap Việt": "rap viet official mv",
+  EDM: "edm music official",
+  Acoustic: "acoustic music vietnam",
+  Chill: "chill music playlist",
+  Rock: "rock music official",
+  "Nhạc Trẻ": "nhac tre moi nhat",
+};
+
 export default function HomePage() {
   const navigate = useNavigate();
   const { triggerPlaylistRefresh } = usePlaylist();
 
   /* ================= SEARCH ================= */
-  // const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  // const [searchLoading, setSearchLoading] = useState(false);
 
   /* ================= HERO ================= */
-  const [recommendedTracks, setRecommendedTracks] = useState([]);
+  const [homeTrending, setHomeTrending] = useState([]);
+  const [genreTrending, setGenreTrending] = useState(null);
+  const [activeGenre, setActiveGenre] = useState(null);
 
   /* ================= PLAYLIST ================= */
   const [playlists, setPlaylists] = useState([]);
@@ -40,18 +51,83 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  /* ================= FETCH HOME RECOMMEND ================= */
+  /* ================= FETCH HOME TRENDING ================= */
   useEffect(() => {
     const fetchHome = async () => {
       try {
         const res = await api.get("/home");
-        setRecommendedTracks(res.data || []);
+        setHomeTrending(res.data || []);
       } catch {
-        setRecommendedTracks([]);
+        setHomeTrending([]);
       }
     };
     fetchHome();
   }, []);
+
+  /* ================= GENRE CLICK ================= */
+  const handleSelectGenre = async (genreTitle) => {
+    const queries = GENRE_QUERY_MAP[genreTitle];
+    if (!queries) return;
+
+    // đảm bảo luôn là array
+    const queryList = Array.isArray(queries) ? queries : [queries];
+
+    try {
+      let finalResults = [];
+
+      for (const q of queryList) {
+        const res = await api.get("/search", {
+          params: { q },
+        });
+
+        const rawResults = res.data?.items || res.data?.results || [];
+
+        // 🔍 lọc video chất lượng
+        const filtered = rawResults.filter(
+          (v) =>
+            v &&
+            v.id &&
+            v.thumbnail &&
+            v.duration &&
+            !v.title?.toLowerCase().includes("shorts")
+        );
+
+        if (filtered.length >= 6) {
+          finalResults = filtered;
+          break; // ✅ đủ đẹp → dừng luôn
+        }
+
+        // fallback nếu chưa có kết quả nào tốt
+        if (finalResults.length === 0 && filtered.length > 0) {
+          finalResults = filtered;
+        }
+      }
+
+      setGenreTrending(finalResults.slice(0, 8));
+      setActiveGenre(genreTitle);
+
+      // reset search UI (khôi phục ô tìm kiếm)
+      setSearchResults([]);
+
+      scrollToHero();
+    } catch (err) {
+      console.error("Genre trending error:", err);
+    }
+  };
+
+  /* ================= RESET HERO ================= */
+  const resetHeroTrending = () => {
+    setGenreTrending(null);
+    setActiveGenre(null);
+    scrollToHero();
+  };
+
+  const scrollToHero = () => {
+    const hero = document.getElementById("hero");
+    if (hero) {
+      hero.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   /* ================= PLAYLIST MODAL ================= */
   const handleOpenPlaylistModal = (videoId) => {
@@ -71,22 +147,24 @@ export default function HomePage() {
 
   return (
     <div className="home-page">
-      {/* HEADER (SEARCH INPUT) */}
+      {/* HEADER */}
       <Header
         onSearchResult={setSearchResults}
         onAddToPlaylist={handleOpenPlaylistModal}
       />
 
       {/* HERO */}
-      <div style={{ paddingTop: 80 }}>
+      <div id="hero" style={{ paddingTop: 80 }}>
         <HeroDiscoverGrid
-          tracks={recommendedTracks}
+          tracks={genreTrending || homeTrending}
           searchResults={searchResults}
+          activeGenre={activeGenre}
+          onResetGenre={resetHeroTrending}
         />
       </div>
 
       {/* CONTENT */}
-      <GenresSection />
+      <GenresSection onSelectGenre={handleSelectGenre} />
       <TrendingSection />
       <PlaylistsSection
         playlists={playlists}

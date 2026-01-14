@@ -44,12 +44,13 @@ router.get("/search", checkApiKey, async (req, res) => {
     });
   }
 
-  const cacheKey = `yt_search_${query}`;
+  // 🔥 cache key nâng cấp (tránh bị đóng băng kết quả)
+  const cacheKey = `yt_search_${query}_v2`;
   const cached = youtubeCache.get(cacheKey);
   if (cached) return res.json(cached);
 
   try {
-    // 1️⃣ SEARCH → lấy videoId
+    // 1️⃣ SEARCH – ưu tiên nhạc, VN, view cao
     const searchRes = await axios.get(
       "https://www.googleapis.com/youtube/v3/search",
       {
@@ -57,7 +58,11 @@ router.get("/search", checkApiKey, async (req, res) => {
           part: "snippet",
           q: query,
           type: "video",
-          maxResults: 15,
+          videoCategoryId: "10", // 🎵 Music
+          regionCode: "VN", // 🇻🇳 Việt Nam
+          relevanceLanguage: "vi",
+          order: "viewCount", // 🔥 HOT
+          maxResults: 25, // QUAN TRỌNG
           key: process.env.YOUTUBE_API_KEY,
         },
       }
@@ -71,20 +76,20 @@ router.get("/search", checkApiKey, async (req, res) => {
       return res.json({ items: [] });
     }
 
-    // 2️⃣ VIDEOS → lấy duration
+    // 2️⃣ VIDEOS – lấy duration
     const videosRes = await axios.get(
       "https://www.googleapis.com/youtube/v3/videos",
       {
         params: {
-          part: "snippet,contentDetails",
+          part: "snippet,contentDetails,statistics",
           id: videoIds.join(","),
           key: process.env.YOUTUBE_API_KEY,
         },
       }
     );
 
-    // 3️⃣ MAP + FILTER < 7 PHÚT
-    const items = videosRes.data.items
+    // 3️⃣ MAP + FILTER + SORT
+    let items = videosRes.data.items
       .map((v) => {
         const duration = parseDurationToSeconds(
           v.contentDetails?.duration || ""
@@ -95,16 +100,28 @@ router.get("/search", checkApiKey, async (req, res) => {
           title: v.snippet.title,
           channel: v.snippet.channelTitle,
           thumbnail:
+            v.snippet.thumbnails?.high?.url ||
             v.snippet.thumbnails?.medium?.url ||
-            v.snippet.thumbnails?.default?.url ||
             "",
-          duration, // seconds
+          duration,
+          views: Number(v.statistics?.viewCount || 0),
         };
       })
-      .filter((v) => v.duration > 0 && v.duration <= 420); // 🎯 < 7 phút
+      .filter(
+        (v) =>
+          v.duration > 0 &&
+          v.duration <= 420 &&
+          !v.title.toLowerCase().includes("shorts")
+      );
+
+    // 🔥 SORT lại lần nữa cho chắc
+    items.sort((a, b) => b.views - a.views);
+
+    // 🎲 Shuffle nhẹ để đỡ “video quen mặt”
+    items = items.sort(() => Math.random() - 0.5);
 
     const response = { items };
-    youtubeCache.set(cacheKey, response);
+    youtubeCache.set(cacheKey, response, 600); // cache 10 phút
 
     res.json(response);
   } catch (err) {

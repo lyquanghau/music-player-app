@@ -2,7 +2,7 @@ import { Play } from "lucide-react";
 import { usePlayer } from "../../context/PlayerContext";
 import "./HeroDiscoverGrid.css";
 
-/* ===================== HELPERS ===================== */
+/* ================= HELPERS ================= */
 const formatDuration = (seconds = 0) => {
   if (!seconds || isNaN(seconds)) return "";
   const m = Math.floor(seconds / 60);
@@ -11,8 +11,10 @@ const formatDuration = (seconds = 0) => {
 };
 
 export default function HeroDiscoverGrid({
-  tracks = [], // HERO LEFT: trending / recommended
-  searchResults = [], // HERO RIGHT: search results
+  tracks = [],
+  searchResults = [],
+  activeGenre = null,
+  onResetGenre,
 }) {
   const { playTrack, currentTrack, isPlaying } = usePlayer();
 
@@ -20,12 +22,22 @@ export default function HeroDiscoverGrid({
     currentTrack && currentTrack.id === id && isPlaying;
 
   return (
-    <section id="hero" className="hero-discover">
+    <section className="hero-discover">
       {/* ================= LEFT: TRENDING ================= */}
       <div className="hero-left">
         <div className="hero-header">
-          <h2>🔥 Những bài hát thịnh hành</h2>
-          <button className="view-all">Hiện tất cả</button>
+          <h2>
+            🔥{" "}
+            {activeGenre
+              ? `Thịnh hành • ${activeGenre}`
+              : "Những bài hát thịnh hành"}
+          </h2>
+
+          {activeGenre && (
+            <button className="view-all" onClick={onResetGenre}>
+              Quay về thịnh hành
+            </button>
+          )}
         </div>
 
         {tracks.length === 0 ? (
@@ -45,7 +57,6 @@ export default function HeroDiscoverGrid({
                     <div className="track-placeholder">🎵</div>
                   )}
 
-                  {/* ▶ PLAY BUTTON */}
                   <button
                     className="track-play"
                     onClick={(e) => {
@@ -56,7 +67,6 @@ export default function HeroDiscoverGrid({
                     <Play size={16} />
                   </button>
 
-                  {/* ⏱ DURATION */}
                   {t.duration && (
                     <span className="track-duration">
                       {formatDuration(t.duration)}
@@ -87,7 +97,7 @@ export default function HeroDiscoverGrid({
           </div>
         ) : (
           <div className="hero-search-list">
-            {searchResults.map((item) => (
+            {searchResults.slice(0, 6).map((item) => (
               <div
                 key={item.id}
                 className={`hero-search-item ${
@@ -95,28 +105,18 @@ export default function HeroDiscoverGrid({
                 }`}
                 onClick={() => playTrack(item, searchResults)}
               >
-                <div className="hero-search-thumb-wrap">
-                  <img
-                    src={item.thumbnail}
-                    alt={item.title}
-                    className="hero-search-thumb"
-                  />
-                </div>
+                <img
+                  src={item.thumbnail}
+                  alt={item.title}
+                  className="hero-search-thumb"
+                />
 
                 <div className="hero-search-info">
-                  <div className="hero-search-title" title={item.title}>
-                    {item.title}
-                  </div>
-                  <div
-                    className="hero-search-channel"
-                    title={`${item.channel} | ${formatDuration(item.duration)}`}
-                  >
+                  <div className="hero-search-title">{item.title}</div>
+                  <div className="hero-search-channel">
                     {item.channel}
                     {item.duration && (
-                      <span className="hero-search-separator">
-                        {" "}
-                        | {formatDuration(item.duration)}
-                      </span>
+                      <span> | {formatDuration(item.duration)}</span>
                     )}
                   </div>
                 </div>

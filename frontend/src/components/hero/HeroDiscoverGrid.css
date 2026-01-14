@@ -9,6 +9,9 @@
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+
+  min-height: calc(100vh - 96px); /* 96px = header + spacing */
+  align-items: start;
 }
 
 /* =====================================================
@@ -17,6 +20,7 @@
 .hero-left {
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 /* ---------- Header ---------- */
@@ -28,7 +32,7 @@
 }
 
 .hero-header h2 {
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
   color: #fff;
 }
@@ -51,6 +55,9 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+
+  flex: 1;
+  align-content: start;
 }
 
 /* ---------- Track Card ---------- */
@@ -152,10 +159,11 @@
    HERO RIGHT (SEARCH PANEL)
 ===================================================== */
 .hero-right {
-  height: 360px;
+  height: 100%;
+  min-height: 360px;
+
   padding: 12px;
   border-radius: 16px;
-
   background: rgba(0, 0, 0, 0.18);
 
   display: flex;
@@ -256,11 +264,6 @@
   font-weight: 600;
   color: #fff;
 }
-
-/* .hero-search-channel {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-} */
 
 .hero-search-playing {
   font-size: 12px;

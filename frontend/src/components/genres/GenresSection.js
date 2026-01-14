@@ -46,36 +46,77 @@ const GENRES = [
     icon: "🔥",
     color: "violet",
   },
+  {
+    id: 9,
+    title: "Bolero",
+    desc: "Da diết, trữ tình",
+    icon: "💃",
+    color: "amber",
+  },
 ];
 
-export default function GenresSection() {
-  /* Reveal cho header */
+export default function GenresSection({ onSelectGenre }) {
   const headerRef = useScrollReveal();
 
-  /* Reveal cho grid (stagger) */
-  const gridRef = useScrollReveal();
+  const rowTop = GENRES.slice(0, 5);
+  const rowBottom = GENRES.slice(5);
 
   return (
     <section id="genres" className="genres-section">
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
       <div ref={headerRef} className="genres-header reveal">
         <h2>🎼 Thể loại</h2>
         <p>Khám phá âm nhạc theo phong cách bạn yêu thích</p>
       </div>
 
-      {/* ================= GRID ================= */}
-      <div ref={gridRef} className="genres-grid reveal-stagger">
-        {GENRES.map((g) => (
-          <div key={g.id} className={`genre-card ${g.color}`}>
-            <div className="genre-bg-icon">{g.icon}</div>
+      {/* MARQUEE */}
+      <div className="genres-marquee">
+        {/* TOP ROW (→ LEFT) */}
+        <div className="marquee marquee-left">
+          {[...rowTop, ...rowTop].map((g, i) => (
+            <GenreCard
+              key={`top-${i}`}
+              genre={g}
+              onSelectGenre={onSelectGenre}
+            />
+          ))}
+        </div>
 
-            <div className="genre-content">
-              <h3>{g.title}</h3>
-              <span>{g.desc}</span>
-            </div>
-          </div>
-        ))}
+        {/* BOTTOM ROW (→ RIGHT) */}
+        <div className="marquee marquee-right">
+          {[...rowBottom, ...rowBottom].map((g, i) => (
+            <GenreCard
+              key={`bottom-${i}`}
+              genre={g}
+              onSelectGenre={onSelectGenre}
+            />
+          ))}
+        </div>
       </div>
     </section>
+  );
+}
+
+function GenreCard({ genre, onSelectGenre }) {
+  return (
+    <div
+      className={`genre-card ${genre.color}`}
+      onClick={() => onSelectGenre?.(genre.title)}
+    >
+      {/* 🎧 SOUND WAVE */}
+      <div className="genre-eq">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
+
+      <div className="genre-bg-icon">{genre.icon}</div>
+
+      <div className="genre-content">
+        <h3>{genre.title}</h3>
+        <span>{genre.desc}</span>
+      </div>
+    </div>
   );
 }
