@@ -11,7 +11,7 @@ app.use(express.json());
 
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? ["https://sky-music-lyquanghau.vercel.app/"]
+    ? ["https://sky-music-lyquanghau.vercel.app"]
     : ["http://localhost:6704"];
 
 app.use(
@@ -21,6 +21,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// 🔥 BẮT BUỘC cho preflight
+app.options("*", cors());
 
 // ===== DB =====
 connectDB();
