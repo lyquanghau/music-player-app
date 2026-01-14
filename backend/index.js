@@ -1,13 +1,15 @@
-// index.js
-require("dotenv").config(); // Chỉ gọi một lần
+require("dotenv").config();
 const express = require("express");
 const connectDB = require("./db.js");
 const cors = require("cors");
 
 const app = express();
-const port = process.env.PORT || 8404; // Thêm giá trị mặc định nếu PORT không được định nghĩa
+const port = process.env.PORT || 8404;
 
-// Middleware
+const trendingRoutes = require("./routes/trending");
+const fetchTrending = require("./jobs/fetchTrending");
+
+// ===== MIDDLEWARE =====
 app.use(express.json());
 app.use(
   cors({
@@ -16,13 +18,17 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 app.options("*", cors());
+
+// ===== DB =====
 connectDB();
-// Routes
+
+// ===== ROUTES =====
 app.get("/", (req, res) => {
   res.send("Welcome to Music Player Backend - YouTube Version");
 });
+
+app.use("/api/trending", trendingRoutes); // ✅ FIXED
 
 const apiRoutes = require("./routes/api");
 const publicRoutes = require("./routes/public");
@@ -32,18 +38,10 @@ app.use("/api", apiRoutes);
 app.use("/", publicRoutes);
 app.use("/api/auth", authRoutes);
 
-// Xử lý lỗi chung
-function handleError(error, res) {
-  if (error.response) {
-    console.log("Lỗi từ YouTube:", error.response.data);
-    res.status(error.response.status).json(error.response.data);
-  } else {
-    console.log("Lỗi khác:", error.message);
-    res.status(500).send("Lỗi: " + error.message);
-  }
-}
+// ===== FETCH TRENDING =====
+fetchTrending();
 
-// Khởi động server
+// ===== START SERVER =====
 app.listen(port, () => {
   console.log(`Server chạy trên http://localhost:${port}`);
 });

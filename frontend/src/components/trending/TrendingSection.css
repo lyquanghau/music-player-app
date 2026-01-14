@@ -1,68 +1,80 @@
-/* components/trending/TrendingSection.css */
-
-.trending-section {
-  padding: 64px 24px;
-  max-width: 1100px;
+.trending-wrapper {
+  padding: 32px 24px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.trending-section h2 {
-  font-size: 24px;
+/* ===== CARD ===== */
+.trending-card {
+  padding: 24px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+/* ===== HEADER ===== */
+.trending-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trending-header h2 {
+  font-size: 20px;
   font-weight: 700;
   color: #1e3a8a;
 }
 
-.trending-desc {
-  margin-top: 6px;
-  font-size: 14px;
+.trending-header .sub {
+  font-size: 12px;
   color: #475569;
 }
 
-.trending-list {
-  margin-top: 28px;
-  display: flex;
-  flex-direction: column;
+/* ===== BODY ===== */
+.trending-body {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
   gap: 16px;
 }
 
-.trending-item {
-  display: grid;
-  grid-template-columns: 46px 1fr 80px 40px;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(6px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* ===== LEFT: LIST ===== */
+.trending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.trending-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+.list-item {
+  display: grid;
+  grid-template-columns: 36px 1fr 48px;
+  gap: 10px;
+  align-items: center;
 }
 
 .rank {
-  font-size: 17px;
   font-weight: 700;
   color: #2563eb;
 }
 
-.song-info strong {
-  font-size: 15px;
+.info strong {
   display: block;
+  max-width: 240px; /* điều chỉnh theo layout */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.song-info span {
-  font-size: 13px;
+.info small {
+  font-size: 12px;
   color: #64748b;
 }
 
 .bar {
-  height: 6px;
-  border-radius: 999px;
+  margin-top: 4px;
+  height: 5px;
   background: #e5e7eb;
-  margin-top: 8px;
+  border-radius: 999px;
   overflow: hidden;
 }
 
@@ -72,8 +84,9 @@
 }
 
 .change {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  text-align: right;
 }
 
 .change.up {
@@ -84,12 +97,94 @@
   color: #dc2626;
 }
 
-.play-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+/* ===== PAGINATION ===== */
+.pagination {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   border: none;
   background: #2563eb;
-  color: #ffffff;
+  color: #fff;
   cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-info {
+  min-width: 44px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* ===== RIGHT: CHART ===== */
+.trending-chart {
+  padding-left: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.chart-box {
+  margin-top: 16px;
+  height: 200px;
+}
+
+.chart-note {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #64748b;
+  text-align: right;
+}
+
+/* ===== STATES ===== */
+.loading {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.error {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #dc2626;
+  text-align: center;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .trending-body {
+    grid-template-columns: 1fr;
+  }
+
+  .trending-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
 }
