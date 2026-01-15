@@ -1,7 +1,8 @@
 // src/api/auth.js
 export const getToken = async (refreshToken) => {
   try {
-    const response = await fetch("http://localhost:8404/api/me", {
+    const API_URL = process.env.REACT_APP_API_URL;
+    const response = await fetch(`${API_URL}/me`, {
       // Sửa thành /api/me
       method: "GET",
       headers: {
