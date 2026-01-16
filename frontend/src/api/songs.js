@@ -1,25 +1,21 @@
-import axios from "axios";
+// src/api/songs.js
+import api from "./api";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404/api";
-
+// Tìm kiếm bài hát (YouTube)
 export const searchSongs = async (query) => {
-  try {
-    const response = await axios.get(`${API_URL}/songs/search`, {
-      params: { query },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error searching songs:", error);
-    throw error;
+  if (!query?.trim()) {
+    return { items: [] };
   }
+
+  const res = await api.get("/songs/search", {
+    params: { query },
+  });
+
+  return res.data;
 };
 
+// Lấy danh sách bài hát (nếu backend có)
 export const getAllSongs = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/songs`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching songs:", error);
-    throw error;
-  }
+  const res = await api.get("/songs");
+  return res.data;
 };

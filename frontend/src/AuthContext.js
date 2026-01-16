@@ -1,25 +1,26 @@
 // src/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from "react";
-import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404";
+import api from "./api/api";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // 🔥 QUAN TRỌNG
 
   // Check token khi app khởi động
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const decoded = jwtDecode(token);
       const currentTime = Date.now() / 1000;
 
-      // ✅ DÙNG exp – CHUẨN JWT
       if (decoded.exp < currentTime) {
         localStorage.removeItem("token");
         setUser(null);
@@ -33,25 +34,31 @@ export const AuthProvider = ({ children }) => {
       console.error("Invalid token:", error);
       localStorage.removeItem("token");
       setUser(null);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // Register
   const signup = async (username, password) => {
-    const response = await axios.post(`${API_URL}/api/auth/register`, {
+    const res = await api.post("/auth/register", {
       username,
       password,
     });
-    return response.data;
+    return res.data;
   };
 
+  // Login
   const login = async (username, password) => {
-    const response = await axios.post(`${API_URL}/api/auth/login`, {
+    const res = await api.post("/auth/login", {
       username,
       password,
     });
 
-    const { token } = response.data;
-    if (!token) throw new Error("No token received");
+    const { token } = res.data;
+    if (!token) {
+      throw new Error("No token received from server");
+    }
 
     localStorage.setItem("token", token);
 
@@ -65,13 +72,14 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  // Logout
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, signup, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

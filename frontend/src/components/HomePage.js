@@ -52,15 +52,37 @@ export default function HomePage() {
   }, []);
 
   /* ================= FETCH HOME TRENDING ================= */
+  // useEffect(() => {
+  //   const fetchHome = async () => {
+  //     try {
+  //       const res = await api.get("/home");
+  //       setHomeTrending(res.data || []);
+  //     } catch {
+  //       setHomeTrending([]);
+  //     }
+  //   };
+  //   fetchHome();
+  // }, []);
+
   useEffect(() => {
     const fetchHome = async () => {
       try {
-        const res = await api.get("/home");
-        setHomeTrending(res.data || []);
-      } catch {
+        const res = await api.get("/trending", {
+          params: { page: 1, limit: 8 },
+        });
+
+        const normalized = (res.data?.items || []).map((item) => ({
+          ...item,
+          id: item.videoId, // 🔥 QUAN TRỌNG
+        }));
+
+        setHomeTrending(normalized);
+      } catch (err) {
+        console.error("Fetch home trending error:", err);
         setHomeTrending([]);
       }
     };
+
     fetchHome();
   }, []);
 
