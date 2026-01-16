@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8404/api";
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function useSearchHistory(token) {
   const [history, setHistory] = useState([]);
@@ -14,7 +14,7 @@ export default function useSearchHistory(token) {
   };
 
   // Load history
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!token) return;
 
     setLoading(true);
@@ -26,7 +26,7 @@ export default function useSearchHistory(token) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]); // 👈 dependency CHUẨN
 
   // Save search
   const saveHistory = async (query, type = "youtube") => {
@@ -66,7 +66,7 @@ export default function useSearchHistory(token) {
 
   useEffect(() => {
     fetchHistory();
-  }, [token]);
+  }, [fetchHistory]); // 👈 ESLint HẾT LỖI
 
   return {
     history,
