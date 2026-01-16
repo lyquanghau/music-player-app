@@ -7,34 +7,40 @@ export default function useSearchHistory(token) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const authHeader = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-
   // Load history
   const fetchHistory = useCallback(async () => {
     if (!token) return;
 
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/history`, authHeader);
+      const res = await axios.get(`${API_URL}/history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setHistory(res.data);
     } catch (err) {
       console.error("Fetch history error:", err);
     } finally {
       setLoading(false);
     }
-  }, [token]); // 👈 dependency CHUẨN
+  }, [token]); // ✅ dependency CHUẨN
 
   // Save search
   const saveHistory = async (query, type = "youtube") => {
     if (!token || !query) return;
 
     try {
-      await axios.post(`${API_URL}/history`, { query, type }, authHeader);
-      fetchHistory(); // reload
+      await axios.post(
+        `${API_URL}/history`,
+        { query, type },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      fetchHistory();
     } catch (err) {
       console.error("Save history error:", err);
     }
@@ -45,7 +51,11 @@ export default function useSearchHistory(token) {
     if (!token) return;
 
     try {
-      await axios.delete(`${API_URL}/history/${id}`, authHeader);
+      await axios.delete(`${API_URL}/history/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setHistory((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
       console.error("Delete history error:", err);
@@ -57,7 +67,11 @@ export default function useSearchHistory(token) {
     if (!token) return;
 
     try {
-      await axios.delete(`${API_URL}/history`, authHeader);
+      await axios.delete(`${API_URL}/history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setHistory([]);
     } catch (err) {
       console.error("Clear history error:", err);
@@ -66,7 +80,7 @@ export default function useSearchHistory(token) {
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory]); // 👈 ESLint HẾT LỖI
+  }, [fetchHistory]); // ✅ ESLint PASS
 
   return {
     history,
