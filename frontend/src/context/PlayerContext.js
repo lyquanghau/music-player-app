@@ -10,18 +10,28 @@ import React, {
 const PlayerContext = createContext(null);
 
 export const PlayerProvider = ({ children }) => {
+  /* ================= REFS ================= */
   const playerRef = useRef(null);
+
+  /* ================= CORE STATE ================= */
   const [currentTrack, setCurrentTrack] = useState(null);
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  /* ================= TIME ================= */
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
+  /* ================= MODES ================= */
   const [repeatMode, setRepeatMode] = useState("off"); // off | all | one
   const [shuffle, setShuffle] = useState(false);
+
+  /* ================= VOLUME ================= */
   const [volume, setVolume] = useState(80);
   const [muted, setMuted] = useState(false);
+
+  /* ================= LIKE ================= */
   const [likedTracks, setLikedTracks] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("likedTracks")) || [];
@@ -30,42 +40,48 @@ export const PlayerProvider = ({ children }) => {
     }
   });
 
+  /* ================= MV ================= */
   const [showMV, setShowMV] = useState(false);
   const [isMVMode, setIsMVMode] = useState(false);
 
-  // QUAN TRỌNG: Cập nhật thời gian thực từ Player
+  /* ================= PLAYER TIME UPDATE ================= */
   useEffect(() => {
-    let interval;
-    if (isPlaying && playerRef.current) {
-      interval = setInterval(() => {
-        // Lấy thời gian hiện tại từ YouTube Player API
-        const time = playerRef.current.getCurrentTime();
-        const dur = playerRef.current.getDuration();
+    if (!isPlaying || !playerRef.current) return;
 
-        if (time !== undefined) setCurrentTime(time);
-        if (dur !== undefined && dur !== duration) setDuration(dur);
-      }, 500); // Cập nhật mỗi 0.5 giây để mượt mà
-    } else {
-      clearInterval(interval);
-    }
+    const interval = setInterval(() => {
+      const time = playerRef.current.getCurrentTime?.();
+      const dur = playerRef.current.getDuration?.();
+
+      if (typeof time === "number") setCurrentTime(time);
+      if (typeof dur === "number" && dur !== duration) setDuration(dur);
+    }, 500);
+
     return () => clearInterval(interval);
   }, [isPlaying, duration]);
 
-  const setPlayerInstance = (player) => {
+  /* ================= PLAYER INSTANCE ================= */
+  const setPlayerInstance = useCallback((player) => {
     playerRef.current = player;
-  };
+  }, []);
 
+  /* ================= PLAY SINGLE TRACK ================= */
   const playTrack = useCallback((track, list = []) => {
+    if (!track) return;
+
     setCurrentTrack(track);
     setIsPlaying(true);
-    if (list.length) {
+
+    if (Array.isArray(list) && list.length > 0) {
       setQueue(list);
-      setCurrentIndex(list.findIndex((t) => t.id === track.id) || 0);
+      const index = list.findIndex((t) => t.id === track.id);
+      setCurrentIndex(index >= 0 ? index : 0);
     }
   }, []);
 
-  const togglePlay = () => {
+  /* ================= TOGGLE PLAY ================= */
+  const togglePlay = useCallback(() => {
     if (!playerRef.current) return;
+
     if (isPlaying) {
       playerRef.current.pauseVideo();
       setIsPlaying(false);
@@ -73,79 +89,101 @@ export const PlayerProvider = ({ children }) => {
       playerRef.current.playVideo();
       setIsPlaying(true);
     }
-  };
+  }, [isPlaying]);
 
-  const seekTo = (time) => {
+  /* ================= SEEK ================= */
+  const seekTo = useCallback((time) => {
     if (!playerRef.current) return;
     playerRef.current.seekTo(time, true);
     setCurrentTime(time);
-  };
+  }, []);
 
+  /* ================= NEXT ================= */
   const playNext = useCallback(() => {
     if (!queue.length) return;
+
     if (repeatMode === "one") {
       seekTo(0);
       playerRef.current?.playVideo();
       return;
     }
-    let nextIndex = shuffle
-      ? Math.floor(Math.random() * queue.length)
-      : (currentIndex + 1) % queue.length;
+
+    let nextIndex;
+    if (shuffle) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    } else {
+      nextIndex =
+        currentIndex < queue.length - 1 ? currentIndex + 1 : 0;
+    }
 
     setCurrentIndex(nextIndex);
     setCurrentTrack(queue[nextIndex]);
     setIsPlaying(true);
-  }, [queue, currentIndex, shuffle, repeatMode]);
+  }, [queue, currentIndex, shuffle, repeatMode, seekTo]);
 
-  const playPrev = () => {
+  /* ================= PREVIOUS ================= */
+  const playPrev = useCallback(() => {
     if (!queue.length) return;
-    const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+
+    const prevIndex =
+      currentIndex === 0 ? queue.length - 1 : currentIndex - 1;
+
     setCurrentIndex(prevIndex);
     setCurrentTrack(queue[prevIndex]);
     setIsPlaying(true);
-  };
+  }, [queue, currentIndex]);
 
-  const changeVolume = (v) => {
-    setVolume(v);
-    if (playerRef.current) playerRef.current.setVolume(v);
-  };
-
-  const toggleMute = () => {
-    if (!playerRef.current) return;
-    if (muted) {
-      playerRef.current.unMute();
-    } else {
-      playerRef.current.mute();
-    }
-    setMuted(!muted);
-  };
-
-  const toggleLike = (trackId) => {
-    setLikedTracks((prev) => {
-      const next = prev.includes(trackId)
-        ? prev.filter((id) => id !== trackId)
-        : [...prev, trackId];
-      localStorage.setItem("likedTracks", JSON.stringify(next));
-      return next;
-    });
-  };
-
-  const playPlayList = useCallback((tracks, startIndex = 0) => {
+  /* ================= PLAY PLAYLIST ================= */
+  const playPlaylist = useCallback((tracks, startIndex = 0) => {
     if (!Array.isArray(tracks) || tracks.length === 0) return;
 
     setQueue(tracks);
     setCurrentIndex(startIndex);
     setCurrentTrack(tracks[startIndex]);
     setIsPlaying(true);
-  });
+  }, []);
 
-  const selecteTrack = useCallback((index) => {
-    if (!queue.length || index < 0 || index >= queue.length) return;
-    setCurrentIndex(index);
-    setCurrentTrack(queue[index]);
-    setIsPlaying(true);
-  });
+  /* ================= SELECT TRACK IN QUEUE ================= */
+  const selectTrack = useCallback(
+    (index) => {
+      if (!queue.length || index < 0 || index >= queue.length) return;
+      setCurrentIndex(index);
+      setCurrentTrack(queue[index]);
+      setIsPlaying(true);
+    },
+    [queue]
+  );
 
+  /* ================= VOLUME ================= */
+  const changeVolume = useCallback((v) => {
+    setVolume(v);
+    playerRef.current?.setVolume(v);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    if (!playerRef.current) return;
+
+    if (muted) {
+      playerRef.current.unMute();
+    } else {
+      playerRef.current.mute();
+    }
+    setMuted((m) => !m);
+  }, [muted]);
+
+  /* ================= LIKE ================= */
+  const toggleLike = useCallback((trackId) => {
+    setLikedTracks((prev) => {
+      const next = prev.includes(trackId)
+        ? prev.filter((id) => id !== trackId)
+        : [...prev, trackId];
+
+      localStorage.setItem("likedTracks", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  /* ================= PROVIDER ================= */
   return (
     <PlayerContext.Provider
       value={{
@@ -159,25 +197,28 @@ export const PlayerProvider = ({ children }) => {
         shuffle,
         volume,
         muted,
+
         playTrack,
-        playPlayList,
-        selecteTrack,
+        playPlaylist,
+        selectTrack,
+
         togglePlay,
         playNext,
         playPrev,
         seekTo,
-        setDuration,
-        setCurrentTime,
+
         setRepeatMode,
         setShuffle,
         setPlayerInstance,
         changeVolume,
         toggleMute,
+
         toggleLike,
         isLiked: (id) => likedTracks.includes(id),
+
         setIsPlaying,
-        setShowMV,
         showMV,
+        setShowMV,
         isMVMode,
         setIsMVMode,
       }}
@@ -187,4 +228,10 @@ export const PlayerProvider = ({ children }) => {
   );
 };
 
-export const usePlayer = () => useContext(PlayerContext);
+export const usePlayer = () => {
+  const ctx = useContext(PlayerContext);
+  if (!ctx) {
+    throw new Error("usePlayer must be used within PlayerProvider");
+  }
+  return ctx;
+};
