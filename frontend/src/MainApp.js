@@ -253,7 +253,7 @@ const MainApp = () => {
                   opacity: 1;
                 }
               }
-              @ketframes fadeOut{
+              @keyframes fadeOut{
               from{
               opacity:1;
               }
@@ -272,6 +272,17 @@ const MainApp = () => {
           <Player
             videoId={selectedVideoId}
             videoInfo={currentVideoInfo}
+            /* 🔥 PLAYLIST (QUEUE) */
+            playlist={videoList.map((v) => ({ id: v.id }))}
+            currentIndex={currentIndex}
+            onSelect={(index) => {
+              const video = videoList[index];
+              if (!video) return;
+              setSelectedVideoId(video.id);
+              setCurrentIndex(index);
+              setCurrentVideoInfo(video);
+            }}
+            /* CONTROLS */
             onNext={handleNext}
             onPrevious={handlePrevious}
             canGoNext={
@@ -285,7 +296,10 @@ const MainApp = () => {
             setIsRepeat={setIsRepeat}
             isShuffle={isShuffle}
             setIsShuffle={setIsShuffle}
+            /* ➕ ADD TO PLAYLIST */
+            onAddToPlaylist={handleOpenPlaylistModal}
           />
+
           <Recommendations
             currentVideoId={selectedVideoId}
             onSelectVideo={handleSelectVideo}

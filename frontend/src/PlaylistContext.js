@@ -1,7 +1,7 @@
 // src/PlaylistContext.js
 import React, { createContext, useState, useContext } from "react";
 
-const PlaylistContext = createContext();
+const PlaylistContext = createContext(null);
 
 export const PlaylistProvider = ({ children }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -12,7 +12,7 @@ export const PlaylistProvider = ({ children }) => {
 
   return (
     <PlaylistContext.Provider
-      value={{ triggerPlaylistRefresh, refreshTrigger }}
+      value={{ refreshTrigger, triggerPlaylistRefresh }}
     >
       {children}
     </PlaylistContext.Provider>
@@ -20,9 +20,9 @@ export const PlaylistProvider = ({ children }) => {
 };
 
 export const usePlaylist = () => {
-  const context = useContext(PlaylistContext);
-  if (!context) {
-    throw new Error("usePlaylist must be used within a PlaylistProvider");
+  const ctx = useContext(PlaylistContext);
+  if (!ctx) {
+    throw new Error("usePlaylist must be used within PlaylistProvider");
   }
-  return context;
+  return ctx;
 };

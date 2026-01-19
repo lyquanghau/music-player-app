@@ -1,19 +1,22 @@
 import React, { useState, useRef } from "react";
-import ReactPlayer from "react-player/youtube"; // thư viện hỗ trợ phát video Youtube
-import { MdOutlineVolumeUp } from "react-icons/md";
-import { LuRepeat1 } from "react-icons/lu";
-import { FaRandom } from "react-icons/fa";
+import ReactPlayer from "react-player/youtube";
 import {
   GiPreviousButton,
   GiNextButton,
   GiPauseButton,
   GiPlayButton,
 } from "react-icons/gi";
+import { MdOutlineVolumeUp } from "react-icons/md";
+import { LuRepeat1 } from "react-icons/lu";
+import { FaRandom, FaPlus } from "react-icons/fa";
 
-// Component Player nhận các props sau:\
 const Player = ({
   videoId,
   videoInfo,
+  playlist = [],
+  currentIndex = 0,
+  onSelect,
+  onAddToPlaylist, // 🔥 NEW
   onNext,
   onPrevious,
   canGoNext,
@@ -23,246 +26,186 @@ const Player = ({
   isShuffle,
   setIsShuffle,
 }) => {
-  // Trạng thái quản lý phát video
-  const [isPlaying, setIsPlaying] = useState(true); // true: đang phát, false: tạm dừng
-  const [played, setPlayed] = useState(0); // tiến trình phát video (0-1)
-  const [duration, setDuration] = useState(0); // thời lượng video (giây)
-  const [volume, setVolume] = useState(0.84); // âm lượng (0-1)
-
-  // Trạng thái mới: quản lý loading và lỗi
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   const playerRef = useRef(null);
 
-  // Xử lý khi video kết thúc
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [played, setPlayed] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(0.84);
+
+  const togglePlay = () => setIsPlaying((p) => !p);
+
   const onEnded = () => {
-    console.log("Video ended, checking repeat or next");
     if (isRepeat) {
-      setIsPlaying(true); // Phát lại video
+      playerRef.current?.seekTo(0);
+      setIsPlaying(true);
     } else {
-      onNext(); // Chuyển sang video tiếp theo
+      onNext();
     }
   };
 
-  // Chuyển đổi trạng thái play/pause
-  const togglePlay = () => {
-    console.log("Toggling play, isPlaying:", isPlaying);
-    setIsPlaying(!isPlaying); // Đảo ngược trạng thái play/pause
-  };
-
-  // Cập nhật tiến trình phát video
-  const handleProgress = (state) => {
-    setPlayed(state.played);
-    console.log(
-      "Progress:",
-      state.playedSeconds,
-      "Duration:",
-      state.loadedSeconds
-    );
-  };
-
-  // Lấy thời lượng video
-  const handleDuration = (duration) => {
-    setDuration(duration); // Lưu thời lượng video
-    console.log("Duration set:", duration);
-  };
-
-  // Xử lý khi người dùng kéo thanh seek bar
   const handleSeekChange = (e) => {
-    const newValue = parseFloat(e.target.value);
-    setPlayed(newValue);
-    playerRef.current.seekTo(newValue, "fraction");
+    const value = parseFloat(e.target.value);
+    setPlayed(value);
+    playerRef.current.seekTo(value, "fraction");
   };
 
-  // Định dạng thời gian (phút:giây)
   const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
   return (
     <div
       style={{
-        backgroundColor: "#f5f5f5",
-        padding: "20px",
-        borderRadius: "8px",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        background: "#f5f5f5",
+        padding: 20,
+        borderRadius: 12,
+        display: "grid",
+        gridTemplateColumns: "1fr 320px",
+        gap: 20,
       }}
     >
-      {/* Hiển thị tiêu đề và kênh của video */}
-      <h2 style={{ fontSize: "1.5em", marginBottom: "10px", color: "#ADD8E6" }}>
-        {videoInfo?.title || "Chưa chọn video"}
-      </h2>
-      <p style={{ color: "#666", marginBottom: "20px" }}>
-        {videoInfo?.channel || ""}
-      </p>
+      {/* ================= LEFT ================= */}
+      <div>
+        <h3>{videoInfo?.title || "Chưa chọn bài hát"}</h3>
+        <p style={{ color: "#666" }}>{videoInfo?.channel || ""}</p>
 
-      {/* Hiển thị thông báo lỗi hoặc trạng thái tải nếu có */}
-      {error && (
-        <p style={{ color: "#dc3545", marginBottom: "10px" }}>{error}</p>
-      )}
-      {isLoading && (
-        <p style={{ color: "#666", marginBottom: "10px" }}>Đang tải video...</p>
-      )}
-
-      {/* Hiển thị ReactPlayer nếu có videoId, nếu không thì thông báo */}
-      {videoId ? (
-        <>
-          <ReactPlayer
-            ref={playerRef}
-            url={`https://www.youtube.com/watch?v=${videoId}`}
-            playing={isPlaying}
-            volume={volume}
-            onEnded={onEnded}
-            onProgress={handleProgress}
-            onDuration={handleDuration}
-            onBuffer={() => setIsLoading(true)} // Khi video bắt đầu buffer
-            onBufferEnd={() => setIsLoading(false)} // Khi video buffer xong
-            onError={(e) => {
-              console.error("ReactPlayer error:", e);
-              setError("Có lỗi xảy ra khi phát nhạc!");
-            }} // Xử lý lỗi
-            width="0"
-            height="0"
-            config={{
-              youtube: {
-                playerVars: { controls: 0, showinfo: 0 },
-              },
-            }}
-          />
-
-          {/* Thanh seek bar hiển thị tiến trình phát */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginBottom: "20px",
-            }}
-          >
-            <span>{formatTime(played * duration)}</span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step="any"
-              value={played}
-              onChange={handleSeekChange}
-              style={{ flex: 1, cursor: "pointer" }}
+        {videoId && (
+          <>
+            <ReactPlayer
+              ref={playerRef}
+              url={`https://www.youtube.com/watch?v=${videoId}`}
+              playing={isPlaying}
+              volume={volume}
+              onEnded={onEnded}
+              onProgress={(s) => setPlayed(s.played)}
+              onDuration={setDuration}
+              width="0"
+              height="0"
+              config={{ youtube: { playerVars: { controls: 0 } } }}
             />
-            <span>{formatTime(duration)}</span>
-          </div>
 
-          {/* Thanh điều chỉnh âm lượng */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              marginBottom: "15px",
-            }}
-          >
-            <span>
+            {/* Progress */}
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <span>{formatTime(played * duration)}</span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step="any"
+                value={played}
+                onChange={handleSeekChange}
+                style={{ flex: 1 }}
+              />
+              <span>{formatTime(duration)}</span>
+            </div>
+
+            {/* Volume */}
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                marginTop: 10,
+              }}
+            >
               <MdOutlineVolumeUp />
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              style={{ width: "100px", cursor: "pointer" }}
-            />
-            <span>{Math.round(volume * 100)}%</span>
-          </div>
-        </>
-      ) : (
-        <p style={{ color: "#666" }}>Vui lòng chọn một video để phát</p>
-      )}
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step="0.01"
+                value={volume}
+                onChange={(e) => setVolume(+e.target.value)}
+              />
+              <span>{Math.round(volume * 100)}%</span>
+            </div>
+          </>
+        )}
 
-      {/* Các nút điều khiển */}
+        {/* Controls */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            marginTop: 16,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <button onClick={onPrevious} disabled={!canGoPrevious}>
+            <GiPreviousButton />
+          </button>
+
+          <button onClick={togglePlay} disabled={!videoId}>
+            {isPlaying ? <GiPauseButton /> : <GiPlayButton />}
+          </button>
+
+          <button onClick={onNext} disabled={!canGoNext}>
+            <GiNextButton />
+          </button>
+
+          <button onClick={() => setIsRepeat(!isRepeat)}>
+            <LuRepeat1 color={isRepeat ? "green" : "gray"} />
+          </button>
+
+          <button onClick={() => setIsShuffle(!isShuffle)}>
+            <FaRandom color={isShuffle ? "green" : "gray"} />
+          </button>
+
+          {/* 🔥 ADD TO PLAYLIST */}
+          <button
+            onClick={() => onAddToPlaylist?.(videoId)}
+            disabled={!videoId}
+            title="Thêm vào playlist"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "#2563eb",
+              color: "#fff",
+              borderRadius: 6,
+              padding: "6px 10px",
+            }}
+          >
+            <FaPlus /> Playlist
+          </button>
+        </div>
+      </div>
+
+      {/* ================= RIGHT – PLAYLIST ================= */}
       <div
         style={{
-          display: "flex",
-          gap: "10px",
-          marginTop: "20px",
-          justifyContent: "center",
+          background: "#fff",
+          borderRadius: 10,
+          padding: 12,
+          overflowY: "auto",
         }}
       >
-        <button
-          onClick={onPrevious}
-          disabled={!canGoPrevious}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: canGoPrevious ? "#007bff" : "#ccc",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: canGoPrevious ? "pointer" : "not-allowed",
-          }}
-        >
-          <GiPreviousButton />
-        </button>
-        <button
-          onClick={togglePlay}
-          disabled={!videoId}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: videoId ? "#007bff" : "#ccc",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: videoId ? "pointer" : "not-allowed",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          {isPlaying ? <GiPauseButton /> : <GiPlayButton />}
-        </button>
-        <button
-          onClick={onNext}
-          disabled={!canGoNext}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: canGoNext ? "#007bff" : "#ccc",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: canGoNext ? "pointer" : "not-allowed",
-          }}
-        >
-          <GiNextButton />
-        </button>
-        <button
-          onClick={() => setIsRepeat(!isRepeat)}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: isRepeat ? "#28a745" : "#ccc",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          {isRepeat ? <LuRepeat1 /> : <LuRepeat1 />}
-        </button>
-        <button
-          onClick={() => setIsShuffle(!isShuffle)}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: isShuffle ? "#28a745" : "#ccc",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          {isShuffle ? <FaRandom /> : <FaRandom />}
-        </button>
+        <h4>Danh sách phát</h4>
+
+        {playlist.length === 0 ? (
+          <p style={{ color: "#777" }}>Chưa có bài trong playlist</p>
+        ) : (
+          playlist.map((item, index) => (
+            <div
+              key={item.id}
+              onClick={() => onSelect?.(index)}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 6,
+                cursor: "pointer",
+                background: index === currentIndex ? "#2563eb" : "transparent",
+                color: index === currentIndex ? "#fff" : "#000",
+                marginBottom: 4,
+              }}
+            >
+              ▶ Bài {index + 1}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlaylist } from "../PlaylistContext";
+import { usePlayer } from "../context/PlayerContext";
 
 import Header from "./layout/Header";
 import HeroDiscoverGrid from "./hero/HeroDiscoverGrid";
@@ -28,7 +29,10 @@ const GENRE_QUERY_MAP = {
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { triggerPlaylistRefresh } = usePlaylist();
+
+  /* ================= CONTEXT ================= */
+  const { refreshTrigger, triggerPlaylistRefresh } = usePlaylist();
+  const { playTrack, playPlaylist, currentTrack } = usePlayer();
 
   /* ================= SEARCH ================= */
   const [searchResults, setSearchResults] = useState([]);
@@ -40,8 +44,16 @@ export default function HomePage() {
 
   /* ================= PLAYLIST ================= */
   const [playlists, setPlaylists] = useState([]);
+
+  // add-to-playlist modal
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [videoToAdd, setVideoToAdd] = useState(null);
+
+  // popup xem playlist
+  const [activePlaylist, setActivePlaylist] = useState(null);
+
+  // cache track info (title thật)
+  const [trackCache, setTrackCache] = useState({});
 
   /* ================= FETCH PLAYLIST ================= */
   useEffect(() => {
@@ -49,21 +61,9 @@ export default function HomePage() {
       .get("/custom-playlists")
       .then((res) => setPlaylists(res.data || []))
       .catch(() => {});
-  }, []);
+  }, [refreshTrigger]);
 
   /* ================= FETCH HOME TRENDING ================= */
-  // useEffect(() => {
-  //   const fetchHome = async () => {
-  //     try {
-  //       const res = await api.get("/home");
-  //       setHomeTrending(res.data || []);
-  //     } catch {
-  //       setHomeTrending([]);
-  //     }
-  //   };
-  //   fetchHome();
-  // }, []);
-
   useEffect(() => {
     const fetchHome = async () => {
       try {
@@ -73,12 +73,11 @@ export default function HomePage() {
 
         const normalized = (res.data?.items || []).map((item) => ({
           ...item,
-          id: item.videoId, // 🔥 QUAN TRỌNG
+          id: item.videoId,
         }));
 
         setHomeTrending(normalized);
-      } catch (err) {
-        console.error("Fetch home trending error:", err);
+      } catch {
         setHomeTrending([]);
       }
     };
@@ -86,58 +85,64 @@ export default function HomePage() {
     fetchHome();
   }, []);
 
-  /* ================= GENRE CLICK ================= */
-  const handleSelectGenre = async (genreTitle) => {
-    const queries = GENRE_QUERY_MAP[genreTitle];
-    if (!queries) return;
+  useEffect(() => {
+    if (!homeTrending.length) return;
 
-    // đảm bảo luôn là array
-    const queryList = Array.isArray(queries) ? queries : [queries];
+    setTrackCache((prev) => {
+      const next = { ...prev };
+      homeTrending.forEach((t) => {
+        if (t?.id && !next[t.id]) {
+          next[t.id] = t;
+        }
+      });
+      return next;
+    });
+  }, [homeTrending]);
+
+  useEffect(() => {
+    if (!genreTrending?.length) return;
+
+    setTrackCache((prev) => {
+      const next = { ...prev };
+      genreTrending.forEach((t) => {
+        if (t?.id && !next[t.id]) {
+          next[t.id] = t;
+        }
+      });
+      return next;
+    });
+  }, [genreTrending]);
+
+  // 🔥 Cache track từ kết quả tìm kiếm
+  useEffect(() => {
+    if (!searchResults.length) return;
+
+    setTrackCache((prev) => {
+      const next = { ...prev };
+      searchResults.forEach((t) => {
+        if (t?.id && !next[t.id]) {
+          next[t.id] = t;
+        }
+      });
+      return next;
+    });
+  }, [searchResults]);
+
+  /* ================= GENRE ================= */
+  const handleSelectGenre = async (genreTitle) => {
+    const q = GENRE_QUERY_MAP[genreTitle];
+    if (!q) return;
 
     try {
-      let finalResults = [];
-
-      for (const q of queryList) {
-        const res = await api.get("/search", {
-          params: { q },
-        });
-
-        const rawResults = res.data?.items || res.data?.results || [];
-
-        // 🔍 lọc video chất lượng
-        const filtered = rawResults.filter(
-          (v) =>
-            v &&
-            v.id &&
-            v.thumbnail &&
-            v.duration &&
-            !v.title?.toLowerCase().includes("shorts")
-        );
-
-        if (filtered.length >= 6) {
-          finalResults = filtered;
-          break; // ✅ đủ đẹp → dừng luôn
-        }
-
-        // fallback nếu chưa có kết quả nào tốt
-        if (finalResults.length === 0 && filtered.length > 0) {
-          finalResults = filtered;
-        }
-      }
-
-      setGenreTrending(finalResults.slice(0, 8));
+      const res = await api.get("/search", { params: { q } });
+      const items = res.data?.items || [];
+      setGenreTrending(items.slice(0, 8));
       setActiveGenre(genreTitle);
-
-      // reset search UI (khôi phục ô tìm kiếm)
       setSearchResults([]);
-
       scrollToHero();
-    } catch (err) {
-      console.error("Genre trending error:", err);
-    }
+    } catch {}
   };
 
-  /* ================= RESET HERO ================= */
   const resetHeroTrending = () => {
     setGenreTrending(null);
     setActiveGenre(null);
@@ -145,13 +150,13 @@ export default function HomePage() {
   };
 
   const scrollToHero = () => {
-    const hero = document.getElementById("hero");
-    if (hero) {
-      hero.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    document.getElementById("hero")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
-  /* ================= PLAYLIST MODAL ================= */
+  /* ================= ADD TO PLAYLIST ================= */
   const handleOpenPlaylistModal = (videoId) => {
     setVideoToAdd(videoId);
     setShowPlaylistModal(true);
@@ -167,37 +172,86 @@ export default function HomePage() {
     } catch {}
   };
 
+  /* ================= PLAY ================= */
+
+  // ▶ Play single track (Hero / Search / Trending)
+  const handlePlaySingle = (track, tracks = []) => {
+    // cache track hiện tại
+    setTrackCache((prev) => ({
+      ...prev,
+      [track.id]: track,
+    }));
+
+    // cache danh sách nếu có
+    tracks.forEach((t) => {
+      if (t?.id) {
+        setTrackCache((prev) => ({
+          ...prev,
+          [t.id]: t,
+        }));
+      }
+    });
+
+    playTrack(track, tracks);
+  };
+
+  // build playlist tracks từ cache
+  const buildPlaylistTracks = (playlist) => {
+    return playlist.videos.map((id, index) => {
+      const cached = trackCache[id];
+      return (
+        cached || {
+          id,
+          title: `Track ${index + 1}`,
+          channel: "YouTube",
+          thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        }
+      );
+    });
+  };
+
+  // ▶ Play toàn bộ playlist
+  const handlePlayPlaylist = (playlist) => {
+    if (!playlist?.videos?.length) return;
+    const tracks = buildPlaylistTracks(playlist);
+    playPlaylist(tracks, 0);
+  };
+
+  /* ================= RENDER ================= */
   return (
     <div className="home-page">
-      {/* HEADER */}
       <Header
         onSearchResult={setSearchResults}
         onAddToPlaylist={handleOpenPlaylistModal}
       />
 
-      {/* HERO */}
       <div id="hero" style={{ paddingTop: 80 }}>
         <HeroDiscoverGrid
           tracks={genreTrending || homeTrending}
           searchResults={searchResults}
           activeGenre={activeGenre}
           onResetGenre={resetHeroTrending}
+          onPlayTrack={handlePlaySingle}
         />
       </div>
 
-      {/* CONTENT */}
       <GenresSection onSelectGenre={handleSelectGenre} />
       <TrendingSection />
+
       <PlaylistsSection
         playlists={playlists}
-        onOpen={(id) => navigate(`/playlist/${id}`)}
-        onPlay={(id) => navigate(`/playlist/${id}?autoplay=true`)}
+        onOpen={(playlist) => setActivePlaylist(playlist)}
+        onPlay={(playlist) => {
+          setActivePlaylist(playlist);
+          handlePlayPlaylist(playlist);
+        }}
       />
+
       <MVSection />
       <ChannelsSection onOpen={(id) => navigate(`/channel/${id}`)} />
       <Footer />
 
-      {/* PLAYLIST MODAL */}
+      {/* ADD TO PLAYLIST MODAL */}
       {showPlaylistModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -210,6 +264,64 @@ export default function HomePage() {
               ))}
             </ul>
             <button onClick={() => setShowPlaylistModal(false)}>Đóng</button>
+          </div>
+        </div>
+      )}
+
+      {/* PLAYLIST POPUP */}
+      {activePlaylist && (
+        <div className="playlist-popup-overlay">
+          <div className="playlist-popup">
+            <h3>{activePlaylist.name}</h3>
+
+            <div className="playlist-popup-actions">
+              <button
+                className="popup-btn primary"
+                onClick={() => handlePlayPlaylist(activePlaylist)}
+              >
+                ▶ Phát tất cả
+              </button>
+
+              <button
+                className="popup-btn ghost"
+                onClick={() => setActivePlaylist(null)}
+              >
+                ✕ Đóng
+              </button>
+            </div>
+
+            <ul className="playlist-popup-list">
+              {activePlaylist.videos.map((id, index) => {
+                const track = trackCache[id] || {
+                  id,
+                  title: `Track ${index + 1}`,
+                  channel: "YouTube",
+                  thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+                };
+
+                const isActive = currentTrack?.id === id;
+
+                return (
+                  <li
+                    key={id}
+                    className={`playlist-popup-item ${
+                      isActive ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      const tracks = buildPlaylistTracks(activePlaylist);
+                      playTrack(track, tracks);
+                    }}
+                  >
+                    <img src={track.thumbnail} alt={track.title} />
+                    <div className="popup-track-meta">
+                      <div className="popup-track-title">{track.title}</div>
+                      <div className="popup-track-channel">{track.channel}</div>
+                    </div>
+                    {isActive && <span className="playing-dot">●</span>}
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       )}

@@ -164,6 +164,29 @@ router.post("/custom-playlists", verifyJWT, async (req, res) => {
   }
 });
 
+router.post(
+  "/custom-playlists/:id/remove-video",
+  verifyJWT,
+  async (req, res) => {
+    const { id } = req.params;
+    const videoId = String(req.body.videoId || "").trim();
+
+    const playlist = await CustomPlaylist.findOne({
+      _id: id,
+      userId: req.user.id,
+    });
+
+    if (!playlist) {
+      return res.status(404).json({ message: "Playlist không tồn tại" });
+    }
+
+    playlist.videos = playlist.videos.filter((v) => v !== videoId);
+    await playlist.save();
+
+    res.json(playlist);
+  }
+);
+
 /**
  * GET /api/custom-playlists
  * Private

@@ -8,7 +8,8 @@ import { FaEye, FaShareAltSquare } from "react-icons/fa";
 import { GiPlayButton } from "react-icons/gi";
 import { MdDeleteForever, MdContentCopy } from "react-icons/md";
 
-const PLACEHOLDER_IMAGE = "https://placehold.co/50x50";
+const getThumbnail = (videoId) =>
+  `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
 const CustomPlaylists = ({ playFromPlaylist }) => {
   // ===== CONTEXT =====
@@ -18,9 +19,8 @@ const CustomPlaylists = ({ playFromPlaylist }) => {
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [newPlaylistName, setNewPlaylistName] = useState("");
-  const [videoDetails, setVideoDetails] = useState({});
-  const [notification, setNotification] = useState(null);
 
+  const [notification, setNotification] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
@@ -39,10 +39,6 @@ const CustomPlaylists = ({ playFromPlaylist }) => {
       if (selectedPlaylist) {
         const updated = res.data.find((p) => p._id === selectedPlaylist._id);
         setSelectedPlaylist(updated || null);
-
-        if (updated?.videos?.length) {
-          loadVideoDetails(updated.videos);
-        }
       }
     } catch {
       showError("Không thể lấy danh sách playlist");
@@ -77,38 +73,9 @@ const CustomPlaylists = ({ playFromPlaylist }) => {
     }
   };
 
-  // ===== VIDEO DETAILS =====
-  const loadVideoDetails = async (videoIds) => {
-    const missing = videoIds.filter((id) => !videoDetails[id]);
-    if (!missing.length) return;
-
-    try {
-      const res = await api.post("/videos/batch", { videoIds: missing });
-      const mapped = {};
-      res.data.forEach((v) => {
-        mapped[v.id] = v;
-      });
-      setVideoDetails((prev) => ({ ...prev, ...mapped }));
-    } catch {
-      const fallback = {};
-      missing.forEach((id) => {
-        fallback[id] = {
-          id,
-          title: "Không tìm thấy video",
-          channel: "Không xác định",
-          thumbnail: PLACEHOLDER_IMAGE,
-        };
-      });
-      setVideoDetails((prev) => ({ ...prev, ...fallback }));
-    }
-  };
-
   // ===== UI HANDLERS =====
   const viewPlaylist = (playlist) => {
     setSelectedPlaylist(playlist);
-    if (playlist.videos.length) {
-      loadVideoDetails(playlist.videos);
-    }
   };
 
   const sharePlaylist = (url) => {
@@ -182,9 +149,10 @@ const CustomPlaylists = ({ playFromPlaylist }) => {
                 padding: 10,
                 background: "#fff",
                 marginBottom: 5,
+                cursor: "pointer",
               }}
             >
-              <div>
+              <div onClick={() => viewPlaylist(p)}>
                 <b>{p.name}</b>
                 <div>{p.videos.length} video</div>
               </div>
@@ -206,42 +174,37 @@ const CustomPlaylists = ({ playFromPlaylist }) => {
         <div style={{ marginTop: 30 }}>
           <h3>{selectedPlaylist.name}</h3>
 
-          {selectedPlaylist.videos.map((vid, index) => {
-            const v = videoDetails[vid] || {};
-            return (
-              <div
-                key={vid}
-                style={{ display: "flex", gap: 10, marginBottom: 10 }}
-              >
-                <img src={v.thumbnail || PLACEHOLDER_IMAGE} width={50} alt="" />
-                <div style={{ flex: 1 }}>
-                  <b>{v.title}</b>
-                  <div>{v.channel}</div>
-                </div>
-                <button
-                  onClick={() =>
-                    playFromPlaylist(
-                      vid,
-                      index,
-                      selectedPlaylist.videos.map((id) => ({
-                        id,
-                        ...(videoDetails[id] || {}),
-                      }))
-                    )
-                  }
-                >
-                  <GiPlayButton />
-                </button>
-                <button
-                  onClick={() =>
-                    removeVideoFromPlaylist(selectedPlaylist._id, vid)
-                  }
-                >
-                  <MdDeleteForever />
-                </button>
+          {selectedPlaylist.videos.map((videoId, index) => (
+            <div
+              key={videoId}
+              style={{ display: "flex", gap: 10, marginBottom: 10 }}
+            >
+              <img src={getThumbnail(videoId)} width={60} alt="" />
+              <div style={{ flex: 1 }}>
+                <b>Video ID:</b> {videoId}
               </div>
-            );
-          })}
+
+              <button
+                onClick={() =>
+                  playFromPlaylist(
+                    videoId,
+                    index,
+                    selectedPlaylist.videos.map((id) => ({ id }))
+                  )
+                }
+              >
+                <GiPlayButton />
+              </button>
+
+              <button
+                onClick={() =>
+                  removeVideoFromPlaylist(selectedPlaylist._id, videoId)
+                }
+              >
+                <MdDeleteForever />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 

@@ -130,10 +130,28 @@ export const PlayerProvider = ({ children }) => {
     });
   };
 
+  const playPlayList = useCallback((tracks, startIndex = 0) => {
+    if (!Array.isArray(tracks) || tracks.length === 0) return;
+
+    setQueue(tracks);
+    setCurrentIndex(startIndex);
+    setCurrentTrack(tracks[startIndex]);
+    setIsPlaying(true);
+  });
+
+  const selecteTrack = useCallback((index) => {
+    if (!queue.length || index < 0 || index >= queue.length) return;
+    setCurrentIndex(index);
+    setCurrentTrack(queue[index]);
+    setIsPlaying(true);
+  });
+
   return (
     <PlayerContext.Provider
       value={{
         currentTrack,
+        queue,
+        currentIndex,
         isPlaying,
         duration,
         currentTime,
@@ -142,6 +160,8 @@ export const PlayerProvider = ({ children }) => {
         volume,
         muted,
         playTrack,
+        playPlayList,
+        selecteTrack,
         togglePlay,
         playNext,
         playPrev,
