@@ -323,6 +323,7 @@ router.delete("/history", verifyJWT, async (req, res) => {
 router.get("/home", async (req, res) => {
   try {
     const videos = await getTrendingMusicFromYoutube();
+
     const filtered = videos.filter((v) => v.duration <= 420);
     res.json(filtered.slice(0, 12));
   } catch (err) {

@@ -2,7 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
-  timeout: 15000, // chống treo khi Render cold start
+  timeout: 30000, // chống treo khi Render cold start
 });
 
 api.interceptors.request.use(
