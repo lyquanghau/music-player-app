@@ -11,6 +11,7 @@ const customPlaylistSchema = new mongoose.Schema(
     },
     videos: [{ type: String }],
     thumbnail: { type: String },
+    shared: { type: Boolean, default: false },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

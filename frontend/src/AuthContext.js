@@ -7,6 +7,19 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const token = user ? localStorage.getItem("token") : null;
+  useEffect(() => {
+    const interceptor = api.interceptors.response.use(undefined, error => {
+      if (token && error.response?.status === 401 &&
+          error.config?.headers?.Authorization === `Bearer ${token}` &&
+          localStorage.getItem("token") === token) {
+        localStorage.removeItem("token");
+        setUser(null);
+      }
+      return Promise.reject(error);
+    });
+    return () => api.interceptors.response.eject(interceptor);
+  }, [token]);
   const [loading, setLoading] = useState(true); // 🔥 QUAN TRỌNG
 
   // Check token khi app khởi động
@@ -79,7 +92,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signup, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, signup, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

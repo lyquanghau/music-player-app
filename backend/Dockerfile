@@ -1,5 +1,5 @@
 # Sử dụng image Node.js phiên bản 16
-FROM node:16
+FROM node:22
 
 # Thiết lập thư mục làm việc trong container
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Cài đặt dependencies
-RUN npm install
+RUN npm ci --omit=dev
 
 # Sao chép toàn bộ code từ local vào container
 COPY . .

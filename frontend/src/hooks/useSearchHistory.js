@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL;
+import api from "../api/api";
 
 export default function useSearchHistory(token) {
   const [history, setHistory] = useState([]);
@@ -13,7 +11,7 @@ export default function useSearchHistory(token) {
 
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/history`, {
+      const res = await api.get("/history", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -27,12 +25,12 @@ export default function useSearchHistory(token) {
   }, [token]); // ✅ dependency CHUẨN
 
   // Save search
-  const saveHistory = async (query, type = "youtube") => {
+  const saveHistory = useCallback(async (query, type = "youtube") => {
     if (!token || !query) return;
 
     try {
-      await axios.post(
-        `${API_URL}/history`,
+      await api.post(
+        "/history",
         { query, type },
         {
           headers: {
@@ -44,14 +42,14 @@ export default function useSearchHistory(token) {
     } catch (err) {
       console.error("Save history error:", err);
     }
-  };
+  }, [token, fetchHistory]);
 
   // Delete one
   const deleteHistory = async (id) => {
     if (!token) return;
 
     try {
-      await axios.delete(`${API_URL}/history/${id}`, {
+      await api.delete(`/history/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -67,7 +65,7 @@ export default function useSearchHistory(token) {
     if (!token) return;
 
     try {
-      await axios.delete(`${API_URL}/history`, {
+      await api.delete("/history", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

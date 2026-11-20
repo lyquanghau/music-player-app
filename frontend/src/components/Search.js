@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { IoSearch, IoArrowForward, IoClose } from "react-icons/io5";
 import { FaArrowTrendUp } from "react-icons/fa6";
 
@@ -18,6 +18,8 @@ const debounce = (fn, delay = 500) => {
 
 const Search = ({ setVideoList, variant = "default" }) => {
   const { token } = useAuth();
+  const requestVersion = useRef(0);
+  useEffect(() => () => { requestVersion.current += 1; }, []);
   const { history, saveHistory, deleteHistory, clearHistory } =
     useSearchHistory(token);
 
@@ -28,7 +30,8 @@ const Search = ({ setVideoList, variant = "default" }) => {
 
   /* ===================== SEARCH LOGIC ===================== */
   const performSearch = useCallback(
-    async (text) => {
+    async (text, version) => {
+      if (version !== requestVersion.current) return;
       const q = text.trim();
 
       // ❗ chỉ search khi >= 2 ký tự
@@ -47,16 +50,18 @@ const Search = ({ setVideoList, variant = "default" }) => {
         });
 
         const items = res.data?.items || [];
+        if (version !== requestVersion.current) return;
 
         setVideoList(items);
 
         if (token) saveHistory(q);
       } catch (err) {
+        if (version !== requestVersion.current) return;
         console.error("Search error:", err);
         setError("Không thể tìm kiếm");
         setVideoList([]);
       } finally {
-        setLoading(false);
+        if (version === requestVersion.current) setLoading(false);
       }
     },
     [setVideoList, saveHistory, token]
@@ -70,6 +75,7 @@ const Search = ({ setVideoList, variant = "default" }) => {
   /* ===================== INPUT HANDLER ===================== */
   const handleChange = (e) => {
     const value = e.target.value;
+    const version = ++requestVersion.current;
     setQuery(value);
 
     // clear kết quả khi input rỗng
@@ -80,16 +86,16 @@ const Search = ({ setVideoList, variant = "default" }) => {
       return;
     }
 
-    debouncedSearch(value);
+    debouncedSearch(value, version);
   };
 
   const handleSubmit = () => {
-    performSearch(query);
+    performSearch(query, ++requestVersion.current);
   };
 
   const handleHistoryClick = (text) => {
     setQuery(text);
-    performSearch(text);
+    performSearch(text, ++requestVersion.current);
     setExpanded(false);
   };
 

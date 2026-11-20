@@ -6,10 +6,13 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
+import { useAuth } from "../AuthContext";
 
 const PlayerContext = createContext(null);
 
 export const PlayerProvider = ({ children }) => {
+  const { user } = useAuth();
+  const likesKey = `likedTracks:${user?.id || "guest"}`;
   /* ================= REFS ================= */
   const playerRef = useRef(null);
 
@@ -34,7 +37,7 @@ export const PlayerProvider = ({ children }) => {
   /* ================= LIKE ================= */
   const [likedTracks, setLikedTracks] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("likedTracks")) || [];
+      return JSON.parse(localStorage.getItem(likesKey)) || [];
     } catch {
       return [];
     }
@@ -46,18 +49,18 @@ export const PlayerProvider = ({ children }) => {
 
   /* ================= PLAYER TIME UPDATE ================= */
   useEffect(() => {
-    if (!isPlaying || !playerRef.current) return;
+    if (!isPlaying || isMVMode) return;
 
     const interval = setInterval(() => {
-      const time = playerRef.current.getCurrentTime?.();
-      const dur = playerRef.current.getDuration?.();
+      const time = playerRef.current?.getCurrentTime?.();
+      const dur = playerRef.current?.getDuration?.();
 
       if (typeof time === "number") setCurrentTime(time);
       if (typeof dur === "number" && dur !== duration) setDuration(dur);
     }, 500);
 
     return () => clearInterval(interval);
-  }, [isPlaying, duration]);
+  }, [isPlaying, duration, isMVMode]);
 
   /* ================= PLAYER INSTANCE ================= */
   const setPlayerInstance = useCallback((player) => {
@@ -71,10 +74,13 @@ export const PlayerProvider = ({ children }) => {
     setCurrentTrack(track);
     setIsPlaying(true);
 
-    if (Array.isArray(list) && list.length > 0) {
+    if (Array.isArray(list) && list.some(item => item.id === track.id)) {
       setQueue(list);
       const index = list.findIndex((t) => t.id === track.id);
       setCurrentIndex(index >= 0 ? index : 0);
+    } else {
+      setQueue([track]);
+      setCurrentIndex(0);
     }
   }, []);
 
@@ -110,7 +116,7 @@ export const PlayerProvider = ({ children }) => {
 
     let nextIndex;
     if (shuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
+      nextIndex = (currentIndex + 1 + Math.floor(Math.random() * Math.max(1, queue.length - 1))) % queue.length;
     } else {
       nextIndex =
         currentIndex < queue.length - 1 ? currentIndex + 1 : 0;
@@ -178,10 +184,18 @@ export const PlayerProvider = ({ children }) => {
         ? prev.filter((id) => id !== trackId)
         : [...prev, trackId];
 
-      localStorage.setItem("likedTracks", JSON.stringify(next));
+      localStorage.setItem(likesKey, JSON.stringify(next));
       return next;
     });
-  }, []);
+  }, [likesKey]);
+
+  const finishTrack = () => {
+    if (repeatMode === "off" && !shuffle && currentIndex === queue.length - 1) {
+      setIsPlaying(false);
+      return;
+    }
+    playNext();
+  };
 
   /* ================= PROVIDER ================= */
   return (
@@ -192,6 +206,8 @@ export const PlayerProvider = ({ children }) => {
         currentIndex,
         isPlaying,
         duration,
+        setDuration,
+        finishTrack,
         currentTime,
         repeatMode,
         shuffle,

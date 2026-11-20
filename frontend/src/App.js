@@ -12,7 +12,8 @@ import PlayerPage from "./components/PlayerPage";
 import StickyPlayer from "./components/player/StickyPlayer";
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  if (loading) return null;
 
   return (
     <Routes>
@@ -23,12 +24,17 @@ const AppRoutes = () => {
   );
 };
 
+function SessionPlayer({ children }) {
+  const { user } = useAuth();
+  return <PlayerProvider key={user?.id || "guest"}>{children}</PlayerProvider>;
+}
+
 export default function App() {
   return (
     <Router>
       <AuthProvider>
         <PlaylistProvider>
-          <PlayerProvider>
+          <SessionPlayer>
             {/* ROUTES */}
             <AppRoutes />
 
@@ -37,7 +43,7 @@ export default function App() {
 
             {/* STICKY PLAYER */}
             <StickyPlayer />
-          </PlayerProvider>
+          </SessionPlayer>
         </PlaylistProvider>
       </AuthProvider>
     </Router>

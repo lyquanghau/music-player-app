@@ -5,6 +5,7 @@ const YT_API = "https://www.googleapis.com/youtube/v3/videos";
 
 async function fetchTrending() {
   const { data } = await axios.get(YT_API, {
+    timeout: 15000,
     params: {
       part: "snippet,statistics",
       chart: "mostPopular",
@@ -22,7 +23,13 @@ async function fetchTrending() {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  for (const item of data.items) {
+  const previous = await TrendingSong.find({
+    videoId: { $in: data.items.map(item => item.id) },
+    snapshotDate: yesterday,
+  }).select("videoId trendScore").lean();
+  const previousById = new Map(previous.map(song => [song.videoId, song]));
+
+  const updates = data.items.map(item => {
     const views = Number(item.statistics.viewCount || 0);
     const likes = Number(item.statistics.likeCount || 0);
     const comments = Number(item.statistics.commentCount || 0);
@@ -30,10 +37,7 @@ async function fetchTrending() {
     const trendScore = views * 0.5 + likes * 0.3 + comments * 0.2;
 
     // ===== LẤY SNAPSHOT HÔM QUA =====
-    const yesterdayDoc = await TrendingSong.findOne({
-      videoId: item.id,
-      snapshotDate: yesterday,
-    }).lean();
+    const yesterdayDoc = previousById.get(item.id);
 
     let change = 0;
 
@@ -47,12 +51,12 @@ async function fetchTrending() {
     }
 
     // ===== UPSERT SNAPSHOT HÔM NAY =====
-    await TrendingSong.updateOne(
-      {
+    return { updateOne: {
+      filter: {
         videoId: item.id,
         snapshotDate: today,
       },
-      {
+      update: {
         $set: {
           videoId: item.id,
           title: item.snippet.title,
@@ -68,11 +72,26 @@ async function fetchTrending() {
           snapshotDate: today,
         },
       },
-      { upsert: true }
-    );
-  }
+      upsert: true,
+    } };
+  });
+  if (updates.length) await TrendingSong.bulkWrite(updates);
 
   console.log("✅ Trending snapshot + change% saved");
 }
 
 module.exports = fetchTrending;
+
+if (require.main === module) {
+  require("dotenv").config();
+  const mongoose = require("mongoose");
+  const connectDB = require("../db");
+  Promise.resolve().then(async () => {
+    if (!process.env.YOUTUBE_API_KEY) throw new Error("Missing configuration");
+    await connectDB();
+    await fetchTrending();
+  }).catch(() => {
+    console.error("Trending sync failed. Check database connectivity and YouTube configuration.");
+    process.exitCode = 1;
+  }).finally(() => mongoose.disconnect());
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SearchComponent from "../Search";
+import { useAuth } from "../../AuthContext";
 import logo from "../../assets/logo.png";
 import "../../assets/css/Header.css";
 
@@ -21,6 +22,7 @@ export default function Header({
   onAddToPlaylist, // ✅ GIỮ NGUYÊN
 }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -59,7 +61,7 @@ export default function Header({
 
   /* ================= LOGOUT ================= */
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    logout();
     navigate("/");
   };
 

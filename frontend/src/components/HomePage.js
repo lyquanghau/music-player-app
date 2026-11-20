@@ -74,6 +74,7 @@ export default function HomePage() {
         const normalized = (res.data?.items || []).map((item) => ({
           ...item,
           id: item.videoId,
+          channel: item.artist,
         }));
 
         setHomeTrending(normalized);
@@ -217,6 +218,32 @@ export default function HomePage() {
     playPlaylist(tracks, 0);
   };
 
+  const updatePlaylist = async (action, videoId) => {
+    const path = `/custom-playlists/${activePlaylist._id}`;
+    try {
+      if (action === "delete") {
+        if (!window.confirm("Xóa playlist này?")) return;
+        await api.delete(path);
+        setActivePlaylist(null);
+      } else {
+        let result;
+        if (action === "rename") {
+          const name = window.prompt("Tên playlist", activePlaylist.name)?.trim();
+          if (!name) return;
+          result = await api.put(path, { name });
+        } else if (action === "share") {
+          result = await api.put(path, { shared: !activePlaylist.shared });
+        } else {
+          result = await api.post(`${path}/remove-video`, { videoId });
+        }
+        setActivePlaylist(result.data);
+      }
+      triggerPlaylistRefresh();
+    } catch {
+      window.alert("Không thể cập nhật playlist.");
+    }
+  };
+
   /* ================= RENDER ================= */
   return (
     <div className="home-page">
@@ -275,6 +302,12 @@ export default function HomePage() {
             <h3>{activePlaylist.name}</h3>
 
             <div className="playlist-popup-actions">
+              <button onClick={() => updatePlaylist("rename")}>Đổi tên</button>
+              <button onClick={() => updatePlaylist("delete")}>Xóa playlist</button>
+              <button onClick={() => updatePlaylist("share")}>
+                {activePlaylist.shared ? "Tắt chia sẻ" : "Bật chia sẻ"}
+              </button>
+              {activePlaylist.shared && <a href={`${api.defaults.baseURL.replace(/\/api\/?$/, "")}/playlist/${activePlaylist._id}`}>Link chia sẻ</a>}
               <button
                 className="popup-btn primary"
                 onClick={() => handlePlayPlaylist(activePlaylist)}
@@ -318,6 +351,10 @@ export default function HomePage() {
                       <div className="popup-track-channel">{track.channel}</div>
                     </div>
                     {isActive && <span className="playing-dot">●</span>}
+                    <button onClick={event => {
+                      event.stopPropagation();
+                      updatePlaylist("remove", id);
+                    }}>Bỏ bài</button>
                   </li>
                 );
               })}

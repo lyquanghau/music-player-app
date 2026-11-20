@@ -265,7 +265,6 @@ export default function StickyPlayer() {
             <button
               className="btn-go-mv"
               onClick={() => {
-                togglePlay(false);
                 setIsMVMode(true);
                 setShowMV(true);
               }}

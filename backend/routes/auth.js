@@ -5,6 +5,15 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/User");
 
+router.use((req, res, next) => {
+  const { username, password } = req.body || {};
+  if (typeof username !== "string" || !username.trim() || username.length > 128 ||
+      typeof password !== "string" || !password || (req.path === "/register" && Buffer.byteLength(password) > 72)) {
+    return res.status(400).json({ message: "Thông tin tài khoản không hợp lệ" });
+  }
+  next();
+});
+
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -16,7 +25,7 @@ router.post("/login", async (req, res) => {
     if (!secretKey) {
       return res.status(500).json({ error: "JWT secret key is not defined" });
     }
-    const token = jwt.sign({ id: userFound._id }, secretKey, {
+    const token = jwt.sign({ id: userFound._id, username: userFound.username }, secretKey, {
       expiresIn: "1h",
     });
     res.json({ token });

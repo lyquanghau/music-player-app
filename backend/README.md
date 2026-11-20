@@ -3,7 +3,7 @@
 Đây là backend cho ứng dụng nghe nhạc, cho phép người dùng tìm kiếm video trên YouTube, lưu lịch sử tìm kiếm, tạo playlist cá nhân và nhận gợi ý video. Backend sử dụng Node.js, Express, MongoDB và YouTube Data API v3.
 
 ## Yêu cầu cài đặt
-- Node.js (v14 trở lên)
+- Node.js 22
 - Tài khoản MongoDB Atlas hoặc MongoDB cài trên máy
 - API Key từ YouTube Data API v3
 
@@ -17,12 +17,13 @@ cd music-player-app/backend
 
 2. Cài đặt dependencies:
 ```bash
-npm install
+npm ci
 ```
 
 3. Tạo file `.env` trong thư mục backend với nội dung:
 ```text
 MONGO_URI=<your-mongodb-uri>
+JWT_SECRET=<random-secret>
 YOUTUBE_API_KEY=<your-youtube-api-key>
 PORT=8404
 ```
@@ -40,6 +41,12 @@ npm start
 ```
 
 Server chạy mặc định tại: `http://localhost:8404`
+
+Để kiểm tra Home bằng dữ liệu mẫu, đặt `RECOVERY_MONGO_URI` trỏ tới MongoDB thử nghiệm và chạy `node jobs/seedRecovery.js`. Script chỉ ghi vào database `music_player_recovery`. Cấu hình `MONGO_URI` của API thử nghiệm dùng cùng database này.
+
+Kiểm tra `GET /ready` để xác nhận kết nối MongoDB. Chạy `npm run trending:sync` trên DB thử để nạp snapshot, rồi đặt lịch chạy lệnh này hằng ngày cho môi trường triển khai. API và job chạy độc lập. Khai báo origin frontend bổ sung trong `CORS_ORIGINS` (phân cách bằng dấu phẩy).
+
+Ở thư mục frontend, cấu hình `REACT_APP_API_URL=http://localhost:8404/api`, chạy `npm ci` rồi `npm start`. Kiểm tra đăng ký → tìm kiếm → phát bài → đăng xuất bằng tài khoản thử.
 
 *Nếu dùng nodemon (tự khởi động lại khi file thay đổi):*
 ```bash

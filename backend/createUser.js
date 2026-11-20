@@ -1,37 +1,19 @@
-// createUser.js
 require("dotenv").config();
-const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const mongoose = require("mongoose");
+const connectDB = require("./db");
 const User = require("./models/User");
 
 async function createUser() {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("Connected to MongoDB (music_player)");
-
-    // Kiểm tra user tồn tại
-    const username = "huonggiang";
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      console.log("User already exists:", existingUser);
-      return;
-    }
-    // Tạo user mới
-    const hashedPassword = await bcrypt.hash("123456789", 10);
-    const user = await User.create({
-      username,
-      password: hashedPassword,
-    });
-    console.log("User created in music_player:", user);
-  } catch (error) {
-    console.error("Error:", error);
-  } finally {
-    mongoose.connection.close();
-    console.log("Connection closed");
-  }
+  const username = process.env.SEED_USERNAME?.trim();
+  const password = process.env.SEED_PASSWORD;
+  if (!username || !password) throw new Error("Missing seed credentials");
+  await connectDB();
+  if (await User.exists({ username })) return;
+  await User.create({ username, password: await bcrypt.hash(password, 10) });
 }
 
-createUser();
+createUser().catch(() => {
+  console.error("Could not create seed user. Check configuration.");
+  process.exitCode = 1;
+}).finally(() => mongoose.disconnect());

@@ -5,12 +5,15 @@ export default function PlayerPage() {
   const {
     currentTrack,
     setPlayerInstance,
-    playNext,
+    finishTrack,
+    isMVMode,
+    setIsPlaying,
+    volume,
+    muted,
     setDuration,
-    setCurrentTime,
   } = usePlayer();
 
-  if (!currentTrack) return null;
+  if (!currentTrack || isMVMode) return null;
 
   return (
     <YouTube
@@ -20,18 +23,22 @@ export default function PlayerPage() {
         width: "0",
         playerVars: { autoplay: 1 },
       }}
-      onReady={(e) => setPlayerInstance(e.target)}
+      onReady={({ target }) => {
+        setPlayerInstance(target);
+        target.setVolume(volume);
+        if (muted) target.mute();
+      }}
       onStateChange={(e) => {
-        if (e.data === 0) playNext();
+        if (e.data === 0) finishTrack();
       }}
       onPlay={(e) => {
         setDuration(e.target.getDuration());
+        setIsPlaying(true);
       }}
-      onError={() => playNext()}
-      onPlaybackQualityChange={() => {}}
-      onPlaybackRateChange={() => {}}
-      onProgress={(e) => {
-        setCurrentTime(e.target.getCurrentTime());
+      onPause={() => setIsPlaying(false)}
+      onError={() => {
+        setIsPlaying(false);
+        window.alert("Không thể phát bài này. Hãy chọn bài khác.");
       }}
     />
   );

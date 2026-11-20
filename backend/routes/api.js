@@ -36,7 +36,7 @@ function parseDurationToSeconds(iso = "") {
  * Public
  */
 router.get("/search", checkApiKey, async (req, res) => {
-  const query = req.query.q?.trim();
+  const query = typeof req.query.q === "string" && req.query.q.length <= 200 && req.query.q.trim();
 
   if (!query || query.length < 2) {
     return res.status(400).json({
@@ -139,7 +139,7 @@ router.get("/search", checkApiKey, async (req, res) => {
  * Private
  */
 router.post("/custom-playlists", verifyJWT, async (req, res) => {
-  const name = req.body.name?.trim();
+  const name = typeof req.body.name === "string" && req.body.name.trim();
   const videos = Array.isArray(req.body.videos) ? req.body.videos : [];
 
   if (!name) {
@@ -171,19 +171,16 @@ router.post(
     const { id } = req.params;
     const videoId = String(req.body.videoId || "").trim();
 
-    const playlist = await CustomPlaylist.findOne({
-      _id: id,
-      userId: req.user.id,
-    });
-
-    if (!playlist) {
-      return res.status(404).json({ message: "Playlist không tồn tại" });
+    if (!videoId || !/^[a-f\d]{24}$/i.test(id)) return res.sendStatus(400);
+    try {
+      const playlist = await CustomPlaylist.findOneAndUpdate(
+        { _id: id, userId: req.user.id }, { $pull: { videos: videoId } }, { new: true }
+      );
+      if (!playlist) return res.sendStatus(404);
+      res.json(playlist);
+    } catch {
+      res.sendStatus(500);
     }
-
-    playlist.videos = playlist.videos.filter((v) => v !== videoId);
-    await playlist.save();
-
-    res.json(playlist);
   }
 );
 
@@ -201,7 +198,7 @@ router.get("/custom-playlists", verifyJWT, async (req, res) => {
 
     const result = playlists.map((pl) => ({
       ...pl.toObject(),
-      shareUrl: `${baseUrl}/playlist/${pl._id}`,
+      shareUrl: pl.shared ? `${baseUrl}/playlist/${pl._id}` : null,
     }));
 
     res.json(result);
@@ -228,10 +225,9 @@ router.post("/custom-playlists/:id/add-video", verifyJWT, async (req, res) => {
   }
 
   try {
-    const playlist = await CustomPlaylist.findOne({
-      _id: id,
-      userId: req.user.id,
-    });
+    const playlist = await CustomPlaylist.findOneAndUpdate(
+      { _id: id, userId: req.user.id }, { $addToSet: { videos: videoId } }, { new: true }
+    );
 
     if (!playlist) {
       return res.status(404).json({
@@ -239,10 +235,6 @@ router.post("/custom-playlists/:id/add-video", verifyJWT, async (req, res) => {
       });
     }
 
-    if (!playlist.videos.includes(videoId)) {
-      playlist.videos.push(videoId);
-      await playlist.save();
-    }
 
     res.json(playlist);
   } catch (err) {
@@ -257,6 +249,26 @@ router.post("/custom-playlists/:id/add-video", verifyJWT, async (req, res) => {
  * DELETE /api/custom-playlists/:id
  * Private
  */
+router.put("/custom-playlists/:id", verifyJWT, async (req, res) => {
+  const { name, shared } = req.body;
+  if (!/^[a-f\d]{24}$/i.test(req.params.id) ||
+      (name === undefined && shared === undefined) ||
+      (name !== undefined && (typeof name !== "string" || !name.trim() || name.trim().length > 100)) ||
+      (shared !== undefined && typeof shared !== "boolean")) return res.sendStatus(400);
+  const updates = {};
+  if (name !== undefined) updates.name = name.trim();
+  if (shared !== undefined) updates.shared = shared;
+  try {
+    const playlist = await CustomPlaylist.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.id }, { $set: updates }, { new: true, runValidators: true }
+    );
+    if (!playlist) return res.sendStatus(404);
+    res.json(playlist);
+  } catch {
+    res.sendStatus(500);
+  }
+});
+
 router.delete("/custom-playlists/:id", verifyJWT, async (req, res) => {
   try {
     const deleted = await CustomPlaylist.findOneAndDelete({
@@ -283,7 +295,7 @@ router.delete("/custom-playlists/:id", verifyJWT, async (req, res) => {
 
 // POST /api/history
 router.post("/history", verifyJWT, async (req, res) => {
-  const query = req.body.query?.trim();
+  const query = typeof req.body.query === "string" && req.body.query.length <= 200 && req.body.query.trim();
 
   if (!query) {
     return res.status(400).json({
@@ -326,6 +338,16 @@ router.get("/history", verifyJWT, async (req, res) => {
 });
 
 // DELETE /api/history
+router.delete("/history/:id", verifyJWT, async (req, res) => {
+  if (!/^[a-f\d]{24}$/i.test(req.params.id)) return res.sendStatus(400);
+  try {
+    const deleted = await SearchHistory.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    res.sendStatus(deleted ? 204 : 404);
+  } catch {
+    res.sendStatus(500);
+  }
+});
+
 router.delete("/history", verifyJWT, async (req, res) => {
   try {
     await SearchHistory.deleteMany({
